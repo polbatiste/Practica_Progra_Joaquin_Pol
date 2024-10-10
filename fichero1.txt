@@ -1,6 +1,0 @@
-
-
-Este fichero es para crear un conflicto
-
-Esta es la linea modificada en la rama master
-
