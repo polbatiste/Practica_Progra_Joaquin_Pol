@@ -1,4 +1,4 @@
-def test_basic():
-    assert True  # Un test simple que siempre pasa
+# test/test_database.py
 
-# Aquí agregaremos más tests después
+def test_example():
+    assert 1 + 1 == 2
