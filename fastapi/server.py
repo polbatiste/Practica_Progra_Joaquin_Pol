@@ -7,6 +7,7 @@ import pandas as pd
 from typing import  List
 
 from pydantic import BaseModel as PydanticBaseModel
+from clientes_endpoints import router as clientes_router
 
 class BaseModel(PydanticBaseModel):
     class Config:
@@ -63,3 +64,7 @@ class FormData(BaseModel):
 @app.post("/envio/")
 async def submit_form(data: FormData):
     return {"message": "Formulario recibido", "data": data}
+
+app = FastAPI()
+
+app.include_router(clientes_router, prefix="/api")
