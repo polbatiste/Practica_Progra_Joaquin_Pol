@@ -5,7 +5,6 @@ from typing import List
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel as PydanticBaseModel
-from src.clientes.routes import router as duenos_router  # Importar el router de dueños
 
 # Clases existentes de ejemplo para la funcionalidad de contratos
 class BaseModel(PydanticBaseModel):
@@ -60,6 +59,3 @@ class FormData(BaseModel):
 @app.post("/envio/")
 async def submit_form(data: FormData):
     return {"message": "Formulario recibido", "data": data}
-
-# Incluir el router de dueños (nueva funcionalidad de gestión de la clínica veterinaria)
-app.include_router(duenos_router, prefix="/api/v1")
