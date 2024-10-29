@@ -4,3 +4,4 @@ pandas
 sqlalchemy
 pytest
 flake8
+httpx
