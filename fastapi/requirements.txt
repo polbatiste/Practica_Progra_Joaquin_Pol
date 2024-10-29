@@ -3,3 +3,4 @@ fastapi
 pandas
 sqlalchemy
 pytest
+flake8
