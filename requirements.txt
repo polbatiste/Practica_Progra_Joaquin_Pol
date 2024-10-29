@@ -1,0 +1,7 @@
+pydantic==1.10.4
+fastapi
+pandas
+sqlalchemy
+pytest
+flake8
+httpx
