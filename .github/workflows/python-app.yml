@@ -1,4 +1,3 @@
-# .github/workflows/python-app.yml
 name: Python Application
 
 on:
