@@ -1,7 +1,6 @@
-pydantic==1.10.4
+pydantic
 fastapi
 pandas
 sqlalchemy
 pytest
 flake8
-httpx
