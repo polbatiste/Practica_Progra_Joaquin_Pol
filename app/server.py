@@ -2,9 +2,10 @@ import shutil
 import io
 import pandas as pd
 from typing import List
-from fastapi import FastAPI, File, UploadFile, Form
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel as PydanticBaseModel, EmailStr
+from app.owners.routers import router as owners_router  # Importación del router de dueños
 
 # Clases existentes de ejemplo para la funcionalidad de contratos
 class BaseModel(PydanticBaseModel):
@@ -30,14 +31,17 @@ class Contrato(BaseModel):
     I_G: str
 
 class ListadoContratos(BaseModel):
-    contratos = List[Contrato]
+    contratos: List[Contrato]  # Añade la anotación de tipo
 
 # Instancia principal de la aplicación FastAPI
 app = FastAPI(
     title="Gestión de Clínica Veterinaria",
-    description="""API para la gestión de datos de la clínica veterinaria y otras funcionalidades.""",
-    version="0.2.0",
+    description="API para la gestión de datos de la clínica veterinaria y otras funcionalidades.",
+    version="0.2.0"
 )
+
+# Incluir router de dueños
+app.include_router(owners_router, prefix="/api/v1")  # Nueva línea
 
 # Endpoint para recuperar datos de contratos (funcionalidad existente)
 @app.get("/retrieve_data/")
@@ -59,3 +63,7 @@ class FormData(BaseModel):
 @app.post("/envio/")
 async def submit_form(data: FormData):
     return {"message": "Formulario recibido", "data": data}
+
+@app.get("/")
+def read_root():
+    return {"message": "Bienvenido a la API de la clínica veterinaria"}
