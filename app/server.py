@@ -31,7 +31,7 @@ class Contrato(BaseModel):
     I_G: str
 
 class ListadoContratos(BaseModel):
-    contratos = List[Contrato]
+    contratos: List[Contrato]  # Añade la anotación de tipo
 
 # Instancia principal de la aplicación FastAPI
 app = FastAPI(
