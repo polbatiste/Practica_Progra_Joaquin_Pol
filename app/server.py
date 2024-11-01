@@ -5,7 +5,7 @@ from typing import List
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel as PydanticBaseModel, EmailStr
-from owners.routers import router as owners_router  # Importación del router de dueños
+from app.owners.routers import router as owners_router  # Importación del router de dueños
 
 # Clases existentes de ejemplo para la funcionalidad de contratos
 class BaseModel(PydanticBaseModel):
