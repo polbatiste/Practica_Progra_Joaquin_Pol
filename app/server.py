@@ -63,3 +63,7 @@ class FormData(BaseModel):
 @app.post("/envio/")
 async def submit_form(data: FormData):
     return {"message": "Formulario recibido", "data": data}
+
+@app.get("/")
+def read_root():
+    return {"message": "Bienvenido a la API de la clínica veterinaria"}
