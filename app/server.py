@@ -32,7 +32,7 @@ class Contrato(BaseModel):
     I_G: str
 
 class ListadoContratos(BaseModel):
-    contratos: List[Contrato]  # Añade la anotación de tipo
+    contratos: List[Contrato]
 
 # Instancia principal de la aplicación FastAPI
 app = FastAPI(
@@ -42,8 +42,8 @@ app = FastAPI(
 )
 
 # Incluir routers de dueños y citas
-app.include_router(owners_router, prefix="/api/v1")
-app.include_router(appointments_router, prefix="/api/v1")  # Nueva línea para incluir el router de citas
+app.include_router(owners_router, prefix="/api/v1/owners", tags=["Owners"])
+app.include_router(appointments_router, prefix="/api/v1/appointments", tags=["Appointments"])
 
 # Endpoint para recuperar datos de contratos (funcionalidad existente)
 @app.get("/retrieve_data/")
@@ -56,7 +56,7 @@ def retrieve_data():
     return listado
 
 # Endpoint para envío de formularios (funcionalidad existente)
-class FormData(BaseModel):
+class FormData(PydanticBaseModel):
     date: str
     description: str
     option: str
