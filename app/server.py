@@ -1,3 +1,4 @@
+# server.py
 import shutil
 import io
 import pandas as pd
@@ -7,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel as PydanticBaseModel, EmailStr
 from app.owners.routers import router as owners_router  # Importación del router de dueños
 from app.appointments.routers import router as appointments_router  # Importación del router de citas
+from app.animals.routers import router as animals_router  # Importación del router de animales
 
 # Clases existentes de ejemplo para la funcionalidad de contratos
 class BaseModel(PydanticBaseModel):
@@ -41,9 +43,12 @@ app = FastAPI(
     version="0.2.0"
 )
 
-# Incluir routers de dueños y citas
-app.include_router(owners_router, prefix="/api/v1/owners", tags=["Owners"])
-app.include_router(appointments_router, prefix="/api/v1/appointments", tags=["Appointments"])
+
+# Incluir routers de dueños, citas y animales
+app.include_router(owners_router, prefix="/api/v1")
+app.include_router(appointments_router, prefix="/api/v1")
+app.include_router(animals_router, prefix="/api/v1")  # Nueva línea para incluir el router de animales
+
 
 # Endpoint para recuperar datos de contratos (funcionalidad existente)
 @app.get("/retrieve_data/")
