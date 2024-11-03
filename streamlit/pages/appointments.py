@@ -3,18 +3,19 @@ import requests
 import pandas as pd
 
 # Configuración del endpoint de la API
-API_URL = "http://localhost:8000/appointments"
-
-# Título de la página
-st.title("Gestión de Citas - Clínica Veterinaria")
+API_URL = "http://localhost:8000/api/v1/appointments"
 
 # Función para obtener todas las citas
 def get_appointments():
-    response = requests.get(API_URL)
-    if response.status_code == 200:
-        return pd.DataFrame(response.json())
-    else:
-        st.error("Error al cargar las citas")
+    try:
+        response = requests.get(API_URL)
+        response.raise_for_status()
+        data = pd.DataFrame(response.json())
+        data["date"] = pd.to_datetime(data["date"]).dt.strftime('%d-%m-%Y')
+        data["time"] = pd.to_datetime(data["time"]).dt.strftime('%H:%M')
+        return data
+    except requests.exceptions.RequestException:
+        st.error("No se puede conectar con el servidor. Inténtelo más tarde.")
         return pd.DataFrame()
 
 # Función para crear una nueva cita
@@ -26,11 +27,14 @@ def create_appointment(client_name, pet_name, date, time, reason):
         "time": time,
         "reason": reason
     }
-    response = requests.post(API_URL, json=data)
-    if response.status_code == 201:
-        st.success("Cita creada exitosamente")
-    else:
-        st.error("Error al crear la cita")
+    try:
+        response = requests.post(API_URL, json=data)
+        if response.status_code == 201:
+            st.success("Cita creada exitosamente")
+        else:
+            st.error("Error al crear la cita")
+    except requests.exceptions.RequestException:
+        st.error("No se puede conectar con el servidor para crear la cita.")
 
 # Función para actualizar una cita
 def update_appointment(appointment_id, client_name, pet_name, date, time, reason):
@@ -41,19 +45,25 @@ def update_appointment(appointment_id, client_name, pet_name, date, time, reason
         "time": time,
         "reason": reason
     }
-    response = requests.put(f"{API_URL}/{appointment_id}", json=data)
-    if response.status_code == 200:
-        st.success("Cita actualizada exitosamente")
-    else:
-        st.error("Error al actualizar la cita")
+    try:
+        response = requests.put(f"{API_URL}/{appointment_id}", json=data)
+        if response.status_code == 200:
+            st.success("Cita actualizada exitosamente")
+        else:
+            st.error("Error al actualizar la cita")
+    except requests.exceptions.RequestException:
+        st.error("No se puede conectar con el servidor para actualizar la cita.")
 
 # Función para eliminar una cita
 def delete_appointment(appointment_id):
-    response = requests.delete(f"{API_URL}/{appointment_id}")
-    if response.status_code == 200:
-        st.success("Cita eliminada exitosamente")
-    else:
-        st.error("Error al eliminar la cita")
+    try:
+        response = requests.delete(f"{API_URL}/{appointment_id}")
+        if response.status_code == 204:
+            st.success("Cita eliminada exitosamente")
+        else:
+            st.error("Error al eliminar la cita")
+    except requests.exceptions.RequestException:
+        st.error("No se puede conectar con el servidor para eliminar la cita.")
 
 # Mostrar las citas existentes
 st.subheader("Citas Existentes")
@@ -73,16 +83,16 @@ with st.form("appointment_form"):
 
     submitted = st.form_submit_button("Enviar")
     if submitted:
-        if appointment_id:
-            update_appointment(appointment_id, client_name, pet_name, date, time, reason)
+        if not client_name or not pet_name or not date or not time or not reason:
+            st.error("Por favor, complete todos los campos del formulario.")
         else:
-            create_appointment(client_name, pet_name, date, time, reason)
+            if appointment_id:
+                update_appointment(appointment_id, client_name, pet_name, date, time, reason)
+            else:
+                create_appointment(client_name, pet_name, date, time, reason)
 
 # Sección para eliminar una cita
 st.subheader("Eliminar Cita")
 delete_id = st.text_input("ID de la Cita a Eliminar", "")
-if st.button("Eliminar"):
-    if delete_id:
-        delete_appointment(delete_id)
-    else:
-        st.error("Por favor, introduce el ID de la cita a eliminar.")
+if delete_id and st.button("Confirmar Eliminación"):
+    delete_appointment(delete_id)
