@@ -5,7 +5,7 @@ import pandas as pd
 
 API_URL = "http://localhost:8000/api/v1/appointments"
 
-st.title("Alta de Dueños - Clínica Veterinaria")
+st.title("Alta de Citas - Clínica Veterinaria")
 
 def get_appointments():
     try:
