@@ -3,36 +3,42 @@ import requests
 from datetime import datetime
 
 # URL del microservicio FastAPI
-url = "http://fastapi:8000/envio/"
+url = "http://app:8000/citas/"
 
-st.title("Ejemplo: formulario para dar la entrada de datos 🖥️🖥")
+st.title("Alta de Citas para la Clínica Veterinaria 🐾")
 
-# Crear el formulario
-with st.form("envio"):
-    date = st.date_input("Fecha", datetime.now())
-    description = st.text_input("Descripción")
-    option = st.selectbox("Opción", ["Opción 1", "Opción 2", "Opción 3"])
-    amount = st.number_input("Cantidad Económica", min_value=0.0, step=0.01)
+# Crear el formulario para dar de alta una cita
+with st.form("alta_cita"):
+    nombre_animal = st.text_input("Nombre del animal")
+    nombre_dueño = st.text_input("Nombre del dueño")
+    tratamiento = st.text_area("Tratamiento a realizar")
+    fecha_cita = st.date_input("Fecha de la cita", datetime.now())
+    hora_cita = st.time_input("Hora de la cita", datetime.now().time())
 
-    submit_button = st.form_submit_button(label="Enviar")
+    submit_button = st.form_submit_button(label="Registrar Cita")
 
 if submit_button:
-    date_str = date.strftime("%Y-%m-%d")
-
-    # Crear el payload para enviar al microservicio
-    payload = {
-        "date": date_str,
-        "description": description,
-        "option": option,
-        "amount": amount
-    }
-
-    # Enviar los datos al microservicio usando requests
-    response = requests.post(url, json=payload)
-
-    # Mostrar el resultado de la solicitud
-    if response.status_code == 200:
-        st.success("Datos enviados correctamente")
-        st.json(response.json())
+    # Validar que todos los campos requeridos estén llenos
+    if not (nombre_animal and nombre_dueño and tratamiento):
+        st.error("Por favor, complete todos los campos obligatorios.")
     else:
-        st.error("Error al enviar los datos")
+        fecha_hora_cita = datetime.combine(fecha_cita, hora_cita).isoformat()
+
+        # Crear el payload para enviar al microservicio
+        payload = {
+            "nombre_animal": nombre_animal,
+            "nombre_dueño": nombre_dueño,
+            "tratamiento": tratamiento,
+            "fecha_hora": fecha_hora_cita
+        }
+
+        # Enviar los datos al microservicio usando requests
+        response = requests.post(url, json=payload)
+
+        # Mostrar el resultado de la solicitud
+        if response.status_code == 200:
+            st.success("Cita registrada correctamente")
+            st.json(response.json())
+        else:
+            st.error(f"Error al registrar la cita: {response.status_code}")
+            st.text(response.text)
