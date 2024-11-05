@@ -3,71 +3,118 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-# Definir la URL de la API
-url = "http://app:8000/api/v1/appointments"
+# Definir la URL de la API de citas
+url_api = "http://app:8000/api/v1/appointments"
 
-def get_appointments():
+# Función para obtener todas las citas existentes de la API
+def obtener_citas():
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = pd.DataFrame(response.json())
-        if not data.empty:
-            data["date"] = pd.to_datetime(data["date"]).dt.strftime('%d-%m-%Y')
-            data["time"] = pd.to_datetime(data["time"]).dt.strftime('%H:%M')
-        return data
+        respuesta = requests.get(url_api)
+        respuesta.raise_for_status()
+        return respuesta.json()  # Devuelve una lista de citas en formato JSON
     except requests.exceptions.RequestException:
-        st.error("No se puede conectar con el servidor. Inténtelo más tarde.")
-        return pd.DataFrame()
+        st.error("No se pudo conectar con el servidor. Inténtelo más tarde.")
+        return []
 
-def create_appointment(client_name, pet_name, date, time, reason):
-    data = {
-        "client_name": client_name,
-        "pet_name": pet_name,
-        "date": date.strftime('%Y-%m-%d'),
-        "time": time.strftime('%H:%M:%S'),
-        "reason": reason
+# Función para asignar automáticamente una consulta a la cita
+def asignar_consulta(fecha, hora, citas):
+    consultas_disponibles = ["1", "2", "3", "4"]  # Consultas disponibles
+    for consulta in consultas_disponibles:
+        # Verificar si la consulta está libre para la fecha y hora dadas
+        if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
+            return consulta  # Devuelve la consulta disponible
+    st.error("No hay consultas disponibles para la fecha y hora seleccionadas.")
+    return None  # Devuelve None si no hay consultas disponibles
+
+# Función para crear o actualizar una cita en la API
+def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, tratamiento, motivo, citas, es_actualizacion=False):
+    fecha_formateada = fecha.strftime('%Y-%m-%d')
+    hora_formateada = hora.strftime('%H:%M:%S')
+    consulta = asignar_consulta(fecha_formateada, hora_formateada, citas)
+    if not consulta:
+        return  # Si no hay consulta disponible, salir de la función
+
+    # Crear el cuerpo de la solicitud con los datos de la cita
+    datos_cita = {
+        "id": id_cita if id_cita else None,
+        "client_name": nombre_cliente,
+        "pet_name": nombre_mascota,
+        "date": fecha_formateada,
+        "time": hora_formateada,
+        "treatment": tratamiento,
+        "reason": motivo,
+        "consultation": consulta
     }
+
     try:
-        response = requests.post(url, json=data)
-        if response.status_code == 201:
-            st.success("Cita creada exitosamente")
+        # Realizar una llamada PUT si es una actualización, de lo contrario, POST
+        if es_actualizacion and id_cita:
+            respuesta = requests.put(f"{url_api}/{id_cita}", json=datos_cita)
         else:
-            st.error(f"Error al crear la cita: {response.text}")
+            respuesta = requests.post(url_api, json=datos_cita)
+
+        if respuesta.status_code in [200, 201]:
+            st.success(f"Cita gestionada exitosamente en la consulta {consulta}")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        else:
+            st.error(f"Error al gestionar la cita: {respuesta.text}")
     except requests.exceptions.RequestException:
-        st.error("No se puede conectar con el servidor para crear la cita.")
+        st.error("No se pudo conectar con el servidor para gestionar la cita.")
 
-st.title("Gestión de Citas de la Clínica Veterinaria")
+# Título de la aplicación
+st.title("Agenda tu Cita en la Clínica Veterinaria")
 
-# Mostrar citas existentes
-st.subheader("Citas Existentes")
-appointments_df = get_appointments()
-if not appointments_df.empty:
-    st.dataframe(appointments_df)
+# Sección para mostrar las citas existentes
+st.subheader("Citas Programadas")
+citas = obtener_citas()
+if citas:
+    # Convertir la lista de citas a un DataFrame de pandas para renombrar las columnas
+    citas_df = pd.DataFrame(citas)
+    if not citas_df.empty:
+        # Renombrar las columnas para mostrarlas de forma más clara y profesional
+        citas_df.rename(columns={
+            "id": "ID de Cita",
+            "client_name": "Nombre de Cliente",
+            "pet_name": "Nombre de Mascota",
+            "date": "Fecha",
+            "time": "Hora",
+            "treatment": "Tratamiento",
+            "reason": "Motivo",
+            "consultation": "Consulta"
+        }, inplace=True)
+        st.table(citas_df)
 else:
-    st.info("No hay citas disponibles en este momento.")
+    st.info("No hay citas programadas en este momento.")
 
-# Formulario para crear o actualizar citas
-st.subheader("Crear o Actualizar Cita")
-with st.form("appointment_form"):
-    client_name = st.text_input("Nombre del Cliente")
-    pet_name = st.text_input("Nombre de la Mascota")
-    date = st.date_input("Fecha de la Cita")
-    time = st.time_input("Hora de la Cita")
-    reason = st.text_area("Motivo de la Cita")
-    appointment_id = st.text_input("ID de Cita (solo para actualización)", "")
+# Sección para el formulario de creación/actualización de citas
+st.subheader("Programar o Modificar Cita")
+with st.form("formulario_cita"):
+    id_cita = st.text_input("ID de la Cita (solo para modificar una cita ya existente)")
+    nombre_cliente = st.text_input("Nombre de Cliente")
+    nombre_mascota = st.text_input("Nombre de Mascota")
+    fecha = st.date_input("Fecha")
+    hora = st.time_input("Hora")
+    tratamiento = st.text_input("Tratamiento")
+    motivo = st.text_area("Motivo")
 
-    submitted = st.form_submit_button("Enviar")
-    if submitted:
-        if not client_name or not pet_name or not date or not time or not reason:
+    enviado = st.form_submit_button("Enviar")
+    if enviado:
+        if not nombre_cliente or not nombre_mascota or not fecha or not hora or not tratamiento or not motivo:
             st.error("Por favor, complete todos los campos del formulario.")
         else:
-            if appointment_id:
-                st.write("Función de actualización aún no implementada.")
-            else:
-                create_appointment(client_name, pet_name, date, time, reason)
+            es_actualizacion = bool(id_cita)
+            crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, tratamiento, motivo, citas, es_actualizacion)
 
-# Funcionalidad para eliminar citas
+# Sección para eliminar citas
 st.subheader("Eliminar Cita")
-delete_id = st.text_input("ID de la Cita a Eliminar", "")
-if delete_id and st.button("Confirmar Eliminación"):
-    st.write("Función de eliminación aún no implementada.")
+id_eliminar = st.text_input("ID de la Cita a Eliminar", "")
+if id_eliminar and st.button("Confirmar Eliminación"):
+    try:
+        respuesta = requests.delete(f"{url_api}/{id_eliminar}")
+        if respuesta.status_code == 204:
+            st.success("Cita eliminada exitosamente")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        else:
+            st.error(f"Error al eliminar la cita: {respuesta.text}")
+    except requests.exceptions.RequestException:
+        st.error("No se pudo conectar con el servidor para eliminar la cita.")
