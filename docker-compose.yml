@@ -1,21 +1,20 @@
 version: '3'
 
 services:
-  
-  app:  # Cambié el nombre del servicio de 'fastapi' a 'app'
-    build: app/  # Ajusté la ruta de construcción a la nueva carpeta 'app'
+  app:
+    build: app/
     ports:
       - 8000:8000
     networks:
       - deploy_network
-    container_name: app  # Actualicé el nombre del contenedor a 'app'
+    container_name: app
     volumes:
       - mis_datos:/var/lib/docker/volumes/aa-streamlit-fastapi_mis_datos/_data
 
   streamlit:
     build: streamlit/
     depends_on:
-      - app  # Cambié la dependencia para que apunte al nuevo servicio 'app'
+      - app
     ports:
       - 8501:8501
     networks:
