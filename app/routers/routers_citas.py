@@ -2,12 +2,12 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date, time
-from uuid import uuid4
+import random
 
 router = APIRouter()
 
 class Appointment(BaseModel):
-    id: str = str(uuid4())  # Genera un ID único al crear una cita
+    id: Optional[str] = None  # ID opcional, se genera si no se proporciona
     client_name: str
     pet_name: str
     date: date
@@ -18,8 +18,17 @@ class Appointment(BaseModel):
 
 appointments_db = []  # Lista en memoria para almacenar las citas
 
+def generate_appointment_id():
+    return str(random.randint(1000, 9999))  # Genera un ID aleatorio de 4 dígitos
+
 @router.post("/appointments", response_model=Appointment, status_code=201)
 def create_appointment(appointment: Appointment):
+    # Generar un ID único de 4 dígitos si no se proporciona uno
+    if appointment.id is None:
+        appointment.id = generate_appointment_id()
+        while any(existing_appointment["id"] == appointment.id for existing_appointment in appointments_db):
+            appointment.id = generate_appointment_id()
+
     # Verificar conflictos de citas en la misma fecha, hora y consulta
     for existing_appointment in appointments_db:
         if (existing_appointment["date"] == appointment.date and
@@ -50,6 +59,7 @@ def update_appointment(appointment_id: str, appointment_update: Appointment):
                         status_code=400,
                         detail="Conflicto: Ya existe una cita en esa fecha, hora y consulta."
                     )
+            appointment_update.id = appointment_id  # Mantener el mismo ID al actualizar
             appointments_db[i] = appointment_update.dict()
             return appointment_update
     raise HTTPException(status_code=404, detail="Cita no encontrada")
