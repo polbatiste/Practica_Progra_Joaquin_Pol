@@ -1,169 +1,128 @@
 import streamlit as st
-
 from streamlit_calendar import calendar
-
 import requests
 
+# URL de la API de citas
+url_api = "http://app:8000/api/v1/appointments"
 
-st.title("Demo de streamlit-calendar con popup para inserción de datos 📆")
+st.title("Calendario para Citas Veterinarias 📆")
 
+# Función para enviar datos a la API
+def send(data, method="POST", appointment_id=None):
+    try:
+        if method == "POST":
+            response = requests.post(url_api, json=data)
+        elif method == "PUT" and appointment_id:
+            response = requests.put(f"{url_api}/{appointment_id}", json=data)
+        elif method == "DELETE" and appointment_id:
+            response = requests.delete(f"{url_api}/{appointment_id}")
+        
+        return response.status_code
+    except requests.exceptions.RequestException:
+        return None
 
-def send(data):
-    #r = requests.post(
-    #    backend, json=data
-    #)
-    #return r.status_code
-    return '200'
-@st.dialog("Mete info!")
-def popup ():
-    st.write(f'Fecha de la cita')
-    with st.form("my_form"):
-        tratamiento = st.text_input("Ingrese el tratamiento:")
-        #edificio = ,,,
-        #
-        submitted = st.form_submit_button("Submit form")
+@st.dialog("Información de la cita")
+def popup():
+    st.write(f'Fecha de la cita: {st.session_state["time_inicial"]}')
+    with st.form("formulario_cita"):
+        nombre_cliente = st.text_input("Nombre del cliente")
+        nombre_mascota = st.text_input("Nombre de la mascota")
+        tratamiento = st.text_input("Tratamiento")
+        motivo = st.text_area("Motivo")
 
-    if submitted:
-        envio = send(...)
-        if envio == '200':
-            st.success("Enviado con éxito, puede cerrar!")
-        else:
-            st.error("No se envio, status_code: {}".format(envio))
+        enviado = st.form_submit_button("Enviar")
+        if enviado:
+            if nombre_cliente and nombre_mascota and tratamiento and motivo:
+                datos = {
+                    "client_name": nombre_cliente,
+                    "pet_name": nombre_mascota,
+                    "date": st.session_state["time_inicial"].split('T')[0],
+                    "time": st.session_state["time_inicial"].split('T')[1][:5],
+                    "treatment": tratamiento,
+                    "reason": motivo,
+                    "consultation": asignar_consulta()  # Llamar a la función de asignación automática de consulta
+                }
+                envio = send(datos)
+                if envio == 201:
+                    st.success("Cita creada exitosamente")
+                    st.write('<script>setTimeout(function(){ window.location.reload(); }, 1000);</script>', unsafe_allow_html=True)
+                else:
+                    st.error("Error al crear la cita. Por favor, inténtelo de nuevo.")
 
+# Función para asignar automáticamente una consulta
+def asignar_consulta():
+    consultas_disponibles = ["1", "2", "3"]
+    return consultas_disponibles[hash(st.session_state["time_inicial"]) % 3]  # Asignación simple y automática
 
-mode = st.selectbox(
-    "Calendar Mode:",
-    (
-        "daygrid",
-        "timegrid",
-        "timeline",
-        "resource-daygrid",
-        "resource-timegrid",
-        "resource-timeline",
-        "list",
-        "multimonth",
-    ),
-)
+# Cargar citas existentes
+def obtener_citas():
+    try:
+        respuesta = requests.get(url_api)
+        respuesta.raise_for_status()
+        return respuesta.json()
+    except requests.exceptions.RequestException:
+        st.error("No se pudo conectar con el servidor para obtener las citas.")
+        return []
+
+# Preparar eventos para el calendario
+citas = obtener_citas()
+consulta_colores = {
+    "1": "#FF6C6C",  # Rojo para Consulta 1
+    "2": "#6CFF6C",  # Verde para Consulta 2
+    "3": "#6C6CFF"   # Azul para Consulta 3
+}
 
 events = [
     {
-        "title": "Consulta Perrito",
-        "color": "#FF6C6C",
-        "start": "2023-07-03",
-        "end": "2023-07-05",
-        "resourceId": "a",
-    },
-    {
-        "title": "Consulta Gatito ",
-        "color": "#FFBD45",
-        "start": "2023-07-01",
-        "end": "2023-07-10",
-        "resourceId": "b",
-    },
-    {
-        "title": "Consulta Perrito",
-        "color": "#FF4B4B",
-        "start": "2023-07-20",
-        "end": "2023-07-20",
-        "resourceId": "c",
-    },
-    {
-        "title": "Consulta Gatito",
-        "color": "#FF6C6C",
-        "start": "2023-07-23",
-        "end": "2023-07-25",
-        "resourceId": "d",
-    },
-    {
-        "title": "Consulta Loro",
-        "color": "#FFBD45",
-        "start": "2023-07-29",
-        "end": "2023-07-30",
-        "resourceId": "e",
-    },
-    {
-        "title": "Consulta Guacamayo Ibérico",
-        "color": "#FF4B4B",
-        "start": "2023-07-28",
-        "end": "2023-07-20",
-        "resourceId": "f",
-    },
-    {
-        "title": "Estudio",
-        "color": "#FF4B4B",
-        "start": "2023-07-01T08:30:00",
-        "end": "2023-07-01T10:30:00",
-        "resourceId": "a",
-    },
-    {
-        "title": "Recados",
-        "color": "#3D9DF3",
-        "start": "2023-07-01T07:30:00",
-        "end": "2023-07-01T10:30:00",
-        "resourceId": "b",
-    },
-    {
-        "title": "Revisión Perrito",
-        "color": "#3DD56D",
-        "start": "2023-07-02T10:40:00",
-        "end": "2023-07-02T12:30:00",
-        "resourceId": "c",
-    },
-
-]
-calendar_resources = [
-    {"id": "a", "building": "Clinica 1", "title": "Consulta A"},
-    {"id": "b", "building": "Clinica 1", "title": "Consulta A"},
-    {"id": "c", "building": "Clinica 1", "title": "Consulta B"},
-    {"id": "d", "building": "Clinica 1", "title": "Consulta B"},
-    {"id": "e", "building": "Clinica 1", "title": "Consulta A"},
-    {"id": "f", "building": "Clinica 1", "title": "Consulta B"},
+        "title": f"{cita['client_name']} - {cita['treatment']}",
+        "start": f"{cita['date']}T{cita['time']}",
+        "end": f"{cita['date']}T{cita['time']}",
+        "id": cita['id'],
+        "color": consulta_colores.get(cita['consultation'], "#CCCCCC")  # Color basado en la consulta
+    }
+    for cita in citas
 ]
 
-
-backend = "http://fastapi:8000/citas"  # Esta URL meterla en un parámetro de configuración
-
-
-fecha = ''
-
-
+# Cambiar la vista del calendario a 'timeGridWeek' para mostrar semanas de lunes a domingo
 calendar_options = {
     "editable": "true",
     "navLinks": "true",
-    "resources": calendar_resources,
     "selectable": "true",
-}
-calendar_options = {
-            **calendar_options,
-            "initialDate": "2023-07-01",
-            "initialView": "resourceTimeGridDay",
-            "resourceGroupField": "building",
+    "initialDate": "2024-11-05",  # Fecha inicial ajustada a la fecha actual
+    "initialView": "timeGridWeek",  # Vista de semana completa
+    "slotMinTime": "09:00:00",  # Hora de inicio
+    "slotMaxTime": "21:00:00",  # Hora de fin
+    "hiddenDays": [0],  # Ocultar domingos (día 0)
+    "weekends": True,  # Mostrar fines de semana
+    "businessHours": [
+        {
+            "daysOfWeek": [1, 2, 3, 4, 5, 6],  # Lunes a sábado
+            "startTime": "09:00",
+            "endTime": "21:00"
         }
+    ]
+}
 
 state = calendar(
     events=st.session_state.get("events", events),
     options=calendar_options,
     custom_css="""
-    .fc-event-past {
-        opacity: 0.8;
-    }
-    .fc-event-time {
-        font-style: italic;
-    }
-    .fc-event-title {
-        font-weight: 700;
-    }
-    .fc-toolbar-title {
-        font-size: 2rem;
-    }
+    .fc-event-past { opacity: 0.8; }
+    .fc-event-title { font-weight: 700; }
+    .fc-toolbar-title { font-size: 1.5rem; }
     """,
-    key='timegrid',
+    key='calendario',
 )
 
-name = ''
+# Mostrar leyenda visual
+st.sidebar.subheader("Leyenda de Consultas")
+st.sidebar.markdown(f"<div style='background-color: #FF6C6C; padding: 5px;'>Consulta 1</div>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<div style='background-color: #6CFF6C; padding: 5px;'>Consulta 2</div>", unsafe_allow_html=True)
+st.sidebar.markdown(f"<div style='background-color: #6C6CFF; padding: 5px;'>Consulta 3</div>", unsafe_allow_html=True)
+
+# Acciones basadas en la interacción con el calendario
 if state.get("eventsSet") is not None:
     st.session_state["events"] = state["eventsSet"]
-    #st.session_state["fecha"] = state["date"]
 
 if state.get('select') is not None:
     st.session_state["time_inicial"] = state["select"]["start"]
@@ -171,14 +130,39 @@ if state.get('select') is not None:
     popup()
 
 if state.get('eventChange') is not None:
-    data = state.get('eventChange').get('event')
-    ## aquí haríamos un requests.post()
+    event_data = state.get('eventChange').get('event')
+    id_evento = event_data['id']
+    fecha_nueva = event_data['start'].split('T')[0]
+    hora_nueva = event_data['start'].split('T')[1][:5]
 
-    st.success('cita camboada con éxito')
+    # Recuperar la cita original para obtener los campos restantes
+    cita_original = next((cita for cita in citas if cita['id'] == id_evento), None)
+    if cita_original:
+        datos_actualizados = {
+            "id": id_evento,
+            "client_name": cita_original['client_name'],  # Mantener el nombre del cliente
+            "pet_name": cita_original['pet_name'],        # Mantener el nombre de la mascota
+            "date": fecha_nueva,
+            "time": hora_nueva,
+            "treatment": cita_original['treatment'],      # Mantener el tratamiento
+            "reason": cita_original['reason'],            # Mantener el motivo
+            "consultation": event_data.get('resourceId', cita_original['consultation'])
+        }
 
-if st.session_state.get("fecha") is not None:
-    st.write('fecha')
-    #st.write(st.session_state["fecha"])
-   # with st.popover("Open popover"):
-   #     st.markdown("Hello World 👋")
-   #     name = st.text_input("What's your name?")
+        status = send(datos_actualizados, method="PUT", appointment_id=id_evento)
+        if status == 200:
+            st.success("Cita actualizada con éxito")
+            st.write('<script>setTimeout(function(){ window.location.reload(); }, 1000);</script>', unsafe_allow_html=True)
+        else:
+            st.error("Error al actualizar la cita.")
+            st.write(f"Detalles del error: {status}")
+
+if state.get('eventClick') is not None:
+    id_evento = state['eventClick']['event']['id']
+    if st.button(f"Eliminar cita ID {id_evento}"):
+        status = send(None, method="DELETE", appointment_id=id_evento)
+        if status == 204:
+            st.success("Cita eliminada exitosamente")
+            st.write('<script>setTimeout(function(){ window.location.reload(); }, 1000);</script>', unsafe_allow_html=True)
+        else:
+            st.error("Error al eliminar la cita.")

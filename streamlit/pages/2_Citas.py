@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, time
 
 # Definir la URL de la API de citas
 url_api = "http://app:8000/api/v1/appointments"
@@ -16,9 +16,23 @@ def obtener_citas():
         st.error("No se pudo conectar con el servidor. Inténtelo más tarde.")
         return []
 
+# Generar una lista de horas de 9:00 AM a 8:00 PM en intervalos de 30 minutos
+def generar_horas_inicio():
+    horas = []
+    hora_actual = time(9, 0)  # 9:00 AM
+    fin = time(20, 0)  # 8:00 PM
+    while hora_actual <= fin:
+        horas.append(hora_actual)
+        # Incremento de 30 minutos
+        hora_actual = (datetime.combine(datetime.today(), hora_actual) + timedelta(minutes=30)).time()
+    return horas
+
+# Crear lista de opciones de horas
+opciones_de_horas = generar_horas_inicio()
+
 # Función para asignar automáticamente una consulta a la cita
 def asignar_consulta(fecha, hora, citas):
-    consultas_disponibles = ["1", "2", "3", "4"]  # Consultas disponibles
+    consultas_disponibles = ["1", "2", "3"]  # Consultas disponibles
     for consulta in consultas_disponibles:
         # Verificar si la consulta está libre para la fecha y hora dadas
         if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
@@ -93,13 +107,15 @@ with st.form("formulario_cita"):
     nombre_cliente = st.text_input("Nombre de Cliente")
     nombre_mascota = st.text_input("Nombre de Mascota")
     fecha = st.date_input("Fecha")
-    hora = st.time_input("Hora")
+    hora = st.selectbox("Hora", opciones_de_horas)
     tratamiento = st.text_input("Tratamiento")
     motivo = st.text_area("Motivo")
 
     enviado = st.form_submit_button("Enviar")
     if enviado:
-        if not nombre_cliente or not nombre_mascota or not fecha or not hora or not tratamiento or not motivo:
+        if fecha.weekday() == 6:
+            st.error("No se pueden programar citas los domingos. Por favor, elija otra fecha.")
+        elif not nombre_cliente or not nombre_mascota or not fecha or not hora or not tratamiento or not motivo:
             st.error("Por favor, complete todos los campos del formulario.")
         else:
             es_actualizacion = bool(id_cita)
