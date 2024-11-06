@@ -10,11 +10,14 @@ services:
     container_name: app
     volumes:
       - mis_datos:/var/lib/docker/volumes/aa-streamlit-fastapi_mis_datos/_data
+    environment:
+      - MONGO_URI=mongodb://mongo:27017  # URI para conectar con MongoDB
 
   streamlit:
     build: streamlit/
     depends_on:
       - app
+      - mongo  # Asegura que MongoDB esté activo antes de iniciar Streamlit
     ports:
       - 8501:8501
     networks:
@@ -23,9 +26,20 @@ services:
     volumes:
       - mis_datos:/var/lib/docker/volumes/aa-streamlit-fastapi_mis_datos/_data
 
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    networks:
+      - deploy_network
+    ports:
+      - 27017:27017  # Exponer puerto de MongoDB
+    volumes:
+      - mongo_data:/data/db  # Volumen para persistencia de datos de MongoDB
+
 networks:
   deploy_network:
     driver: bridge
     
 volumes:
   mis_datos:
+  mongo_data:
