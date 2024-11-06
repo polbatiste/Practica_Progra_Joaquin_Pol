@@ -4,8 +4,9 @@ import requests
 import pandas as pd
 from datetime import datetime, time, timedelta
 
-# URL de la API de citas
+# URL de la API de citas y tratamientos
 url_api = "http://app:8000/api/v1/appointments"
+url_tratamientos = "http://app:8000/api/v1/tratamientos"
 
 st.title("Calendario para Citas Veterinarias 📆")
 
@@ -19,14 +20,25 @@ def obtener_citas():
         st.error("No se pudo conectar con el servidor para obtener las citas.")
         return []
 
+# Función para obtener la lista de tratamientos desde la API
+def obtener_tratamientos():
+    try:
+        respuesta = requests.get(url_tratamientos)
+        respuesta.raise_for_status()
+        tratamientos = respuesta.json()
+        return [tratamiento["nombre"] for tratamiento in tratamientos]
+    except requests.exceptions.RequestException:
+        st.error("No se pudo obtener la lista de tratamientos. Inténtelo más tarde.")
+        return []
+
 # Función para asignar automáticamente una consulta a la cita
 def asignar_consulta(fecha, hora, citas):
-    consultas_disponibles = ["1", "2", "3"]  # Consultas disponibles
+    consultas_disponibles = ["1", "2", "3"]
     for consulta in consultas_disponibles:
         if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
-            return consulta  # Devuelve la consulta disponible
+            return consulta
     st.error("No hay consultas disponibles para la fecha y hora seleccionadas.")
-    return None  # Devuelve None si no hay consultas disponibles
+    return None
 
 # Función para crear o actualizar una cita en la API
 def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, tratamiento, motivo, citas, es_actualizacion=False):
@@ -34,9 +46,8 @@ def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, 
     hora_formateada = hora.strftime('%H:%M:%S')
     consulta = asignar_consulta(fecha_formateada, hora_formateada, citas)
     if not consulta:
-        return  # Salir si no hay consulta disponible
+        return
 
-    # Crear el cuerpo de la solicitud con los datos de la cita
     datos_cita = {
         "id": id_cita if id_cita else None,
         "client_name": nombre_cliente,
@@ -71,13 +82,13 @@ def send(data, method="POST", appointment_id=None):
             response = requests.put(f"{url_api}/{appointment_id}", json=data)
         elif method == "DELETE" and appointment_id:
             response = requests.delete(f"{url_api}/{appointment_id}")
-        
         return response.status_code, response.text
     except requests.exceptions.RequestException as e:
         return None, str(e)
 
 # Cargar citas existentes
 citas = obtener_citas()
+tratamientos = obtener_tratamientos()  # Obtener la lista de tratamientos desde la API
 consulta_colores = {
     "1": "#FF6C6C",
     "2": "#6CFF6C",
@@ -141,7 +152,7 @@ def popup():
     with st.form("formulario_cita"):
         nombre_cliente = st.text_input("Nombre del cliente")
         nombre_mascota = st.text_input("Nombre de la mascota")
-        tratamiento = st.text_input("Tratamiento")
+        tratamiento = st.selectbox("Tratamiento", tratamientos)  # Menú desplegable de tratamientos
         motivo = st.text_area("Motivo")
 
         enviado = st.form_submit_button("Enviar")
