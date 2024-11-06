@@ -1,73 +1,72 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import date, time
-import random
+from pymongo import MongoClient
+
+# Conexión con MongoDB
+client = MongoClient("mongodb://mongodb:27017/")
+db = client.clinica_veterinaria
+coleccion_tratamientos = db.tratamientos
 
 router = APIRouter()
 
-class Appointment(BaseModel):
-    id: Optional[str] = None  # ID opcional, se genera si no se proporciona
-    client_name: str
-    pet_name: str
-    date: date
-    time: time
-    treatment: str
-    reason: str
-    consultation: str  # Campo para la consulta (ejemplo: "a", "b", "c", "d")
+# Modelo de tratamiento
+class Tratamiento(BaseModel):
+    tipo: str
+    nombre: str
+    descripcion: Optional[str] = None
+    precio: float
 
-appointments_db = []  # Lista en memoria para almacenar las citas
+# Función para poblar la colección con tratamientos iniciales
+def poblar_tratamientos_iniciales():
+    tratamientos_iniciales = [
+        {"tipo": "Tratamientos básicos", "nombre": "Análisis de sangre", "descripcion": "Análisis de sangre completo", "precio": 50.0},
+        {"tipo": "Tratamientos básicos", "nombre": "Análisis hormonales", "descripcion": "Pruebas hormonales", "precio": 70.0},
+        {"tipo": "Tratamientos básicos", "nombre": "Vacunación", "descripcion": "Vacunas generales", "precio": 30.0},
+        {"tipo": "Tratamientos básicos", "nombre": "Desparasitación", "descripcion": "Tratamiento contra parásitos", "precio": 25.0},
+        {"tipo": "Revisión general", "nombre": "Revisión general", "descripcion": "Revisión completa del animal", "precio": 60.0},
+        {"tipo": "Revisión específica", "nombre": "Cardiología", "descripcion": "Revisión cardiológica", "precio": 80.0},
+        {"tipo": "Revisión específica", "nombre": "Cutánea", "descripcion": "Revisión de la piel", "precio": 45.0},
+        {"tipo": "Revisión específica", "nombre": "Broncológica", "descripcion": "Revisión del sistema respiratorio", "precio": 75.0},
+        {"tipo": "Ecografías", "nombre": "Ecografía", "descripcion": "Ecografía general", "precio": 90.0},
+        {"tipo": "Limpieza dental", "nombre": "Limpieza bucal", "descripcion": "Limpieza y revisión dental", "precio": 55.0},
+        {"tipo": "Extracción dental", "nombre": "Extracción de piezas dentales", "descripcion": "Extracción de piezas dentales dañadas", "precio": 100.0},
+        {"tipo": "Cirugía", "nombre": "Castración", "descripcion": "Castración quirúrgica", "precio": 150.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía abdominal", "descripcion": "Intervención abdominal", "precio": 300.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía cardíaca", "descripcion": "Cirugía en el corazón", "precio": 500.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía articular y ósea", "descripcion": "Cirugía de articulaciones y huesos", "precio": 400.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía de hernias", "descripcion": "Corrección de hernias", "precio": 350.0},
+    ]
 
-def generate_appointment_id():
-    return str(random.randint(1000, 9999))  # Genera un ID aleatorio de 4 dígitos
+    # Solo poblar si la colección está vacía
+    if coleccion_tratamientos.count_documents({}) == 0:
+        coleccion_tratamientos.insert_many(tratamientos_iniciales)
 
-@router.post("/appointments", response_model=Appointment, status_code=201)
-def create_appointment(appointment: Appointment):
-    # Generar un ID único de 4 dígitos si no se proporciona uno
-    if appointment.id is None:
-        appointment.id = generate_appointment_id()
-        while any(existing_appointment["id"] == appointment.id for existing_appointment in appointments_db):
-            appointment.id = generate_appointment_id()
+# Llamar a la función de población inicial
+poblar_tratamientos_iniciales()
 
-    # Verificar conflictos de citas en la misma fecha, hora y consulta
-    for existing_appointment in appointments_db:
-        if (existing_appointment["date"] == appointment.date and
-            existing_appointment["time"] == appointment.time and
-            existing_appointment["consultation"] == appointment.consultation):
-            raise HTTPException(
-                status_code=400,
-                detail="Conflicto: Ya existe una cita en esa fecha, hora y consulta."
-            )
-    appointments_db.append(appointment.dict())
-    return appointment
+@router.post("/tratamientos", response_model=Tratamiento)
+def crear_tratamiento(tratamiento: Tratamiento):
+    if coleccion_tratamientos.find_one({"nombre": tratamiento.nombre}):
+        raise HTTPException(status_code=400, detail="El tratamiento ya existe")
+    coleccion_tratamientos.insert_one(tratamiento.dict())
+    return tratamiento
 
-@router.get("/appointments", response_model=List[Appointment])
-def get_appointments():
-    return appointments_db
+@router.get("/tratamientos", response_model=List[Tratamiento])
+def listar_tratamientos():
+    tratamientos = list(coleccion_tratamientos.find({}, {"_id": 0}))
+    return tratamientos
 
-@router.put("/appointments/{appointment_id}", response_model=Appointment)
-def update_appointment(appointment_id: str, appointment_update: Appointment):
-    for i, existing_appointment in enumerate(appointments_db):
-        if existing_appointment["id"] == appointment_id:
-            # Verificar conflictos de citas al actualizar
-            for j, conflict_appointment in enumerate(appointments_db):
-                if (j != i and
-                    conflict_appointment["date"] == appointment_update.date and
-                    conflict_appointment["time"] == appointment_update.time and
-                    conflict_appointment["consultation"] == appointment_update.consultation):
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Conflicto: Ya existe una cita en esa fecha, hora y consulta."
-                    )
-            appointment_update.id = appointment_id  # Mantener el mismo ID al actualizar
-            appointments_db[i] = appointment_update.dict()
-            return appointment_update
-    raise HTTPException(status_code=404, detail="Cita no encontrada")
+@router.put("/tratamientos/{nombre}", response_model=Tratamiento)
+def actualizar_tratamiento(nombre: str, tratamiento: Tratamiento):
+    resultado = coleccion_tratamientos.update_one({"nombre": nombre}, {"$set": tratamiento.dict()})
+    if resultado.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Tratamiento no encontrado o sin cambios")
+    return tratamiento
 
-@router.delete("/appointments/{appointment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_appointment(appointment_id: str):
-    for i, existing_appointment in enumerate(appointments_db):
-        if existing_appointment["id"] == appointment_id:
-            appointments_db.pop(i)
-            return {"message": "Cita eliminada exitosamente"}
-    raise HTTPException(status_code=404, detail="Cita no encontrada")
+@router.delete("/tratamientos/{nombre}")
+def eliminar_tratamiento(nombre: str):
+    resultado = coleccion_tratamientos.delete_one({"nombre": nombre})
+    if resultado.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tratamiento no encontrado")
+    return {"mensaje": "Tratamiento eliminado exitosamente"}
