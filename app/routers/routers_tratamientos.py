@@ -4,7 +4,7 @@ from typing import List, Optional
 from pymongo import MongoClient
 
 # Conexión con MongoDB
-client = MongoClient("mongodb://mongodb:27017/")
+client = MongoClient("mongodb://mongodb:27017")
 db = client.clinica_veterinaria
 coleccion_tratamientos = db.tratamientos
 
