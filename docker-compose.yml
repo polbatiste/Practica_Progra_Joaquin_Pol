@@ -1,44 +1,42 @@
-version: '3'
-
 services:
   app:
-    build: app/
+    build:
+      context: ./app  # Asegúrate de que el Dockerfile esté dentro de esta carpeta
+      dockerfile: Dockerfile
     ports:
-      - 8000:8000
+      - "8000:8000"
     networks:
       - deploy_network
     container_name: app
-    volumes:
-      - mis_datos:/var/lib/docker/volumes/aa-streamlit-fastapi_mis_datos/_data
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://root:example@mongodb:27017/?authSource=admin
+
+  streamlit:
+    build:
+      context: ./streamlit  # Asegúrate de que el Dockerfile esté dentro de esta carpeta
+      dockerfile: Dockerfile
+    depends_on:
+      - app
+    ports:
+      - "8501:8501"
+    networks:
+      - deploy_network
+    container_name: streamlit
 
   mongodb:
     image: mongo:latest
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=example
-      - MONGO_LOG_LEVEL=2  # Configura el nivel de log de MongoDB
-      - storage.wiredTiger.engineConfig.journalCompressor=zlib
     ports:
-      - 27017:27017
+      - "27017:27017"
     networks:
       - deploy_network
     container_name: mongodb
-
-  streamlit:
-    build: streamlit/
-    depends_on:
-      - app
-    ports:
-      - 8501:8501
-    networks:
-      - deploy_network
-    container_name: streamlit
-    volumes:
-      - mis_datos:/var/lib/docker/volumes/aa-streamlit-fastapi_mis_datos/_data
+    command: mongod --quiet --auth  # Reducir logs y habilitar autenticación
 
 networks:
   deploy_network:
     driver: bridge
-
-volumes:
-  mis_datos:

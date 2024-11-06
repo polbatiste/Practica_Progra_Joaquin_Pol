@@ -4,7 +4,8 @@ from typing import List, Optional
 from pymongo import MongoClient
 
 # Conexión con MongoDB
-client = MongoClient("mongodb://mongodb:27017")
+MONGO_URI = "mongodb://root:example@mongodb:27017/?authSource=admin"
+client = MongoClient(MONGO_URI)
 db = client.clinica_veterinaria
 coleccion_tratamientos = db.tratamientos
 
