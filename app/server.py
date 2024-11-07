@@ -10,6 +10,7 @@ from routers.routers_owners import router as owners_router  # Importación del r
 from routers.routers_citas import router as appointments_router  # Importación del router de citas
 from routers.routers_animales import router as animals_router  # Importación del router de animales
 from routers.routers_tratamientos import router as tratamientos_router  # Importación del router de tratamientos
+from routers.routers_productos import router as productos_router  # Importación del router de productos
 
 # Clases existentes de ejemplo para la funcionalidad de contratos
 class BaseModel(PydanticBaseModel):
@@ -44,11 +45,12 @@ app = FastAPI(
     version="0.2.0"
 )
 
-# Incluir routers de dueños, citas, animales y tratamientos
+# Incluir routers de dueños, citas, animales, tratamientos y productos
 app.include_router(owners_router, prefix="/api/v1")
 app.include_router(appointments_router, prefix="/api/v1")
 app.include_router(animals_router, prefix="/api/v1")
-app.include_router(tratamientos_router, prefix="/api/v1")  # Nueva línea para incluir el router de tratamientos
+app.include_router(tratamientos_router, prefix="/api/v1")
+app.include_router(productos_router, prefix="/api/v1")  # Nueva línea para incluir el router de productos
 
 # Endpoint para recuperar datos de contratos (funcionalidad existente)
 @app.get("/retrieve_data/")

@@ -1,5 +1,3 @@
-version: "3.8"  # Usa la última versión estable compatible
-
 services:
   app:
     build:
