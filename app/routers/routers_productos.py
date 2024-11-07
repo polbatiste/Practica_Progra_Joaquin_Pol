@@ -84,22 +84,22 @@ def buscar_productos(nombre: Optional[str] = None, categoria: Optional[str] = No
 
 # Endpoint para vender un producto
 @router.post("/productos/venta/{nombre}", response_model=Factura)
-def vender_producto(nombre: str, cantidad: int):
+def vender_producto(nombre: str, stock: int):
     producto = coleccion_productos.find_one({"nombre": nombre})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if producto["stock"] < cantidad:
+    if producto["stock"] < stock:
         raise HTTPException(status_code=400, detail="Stock insuficiente")
 
     # Actualizar stock del producto
-    nuevo_stock = producto["stock"] - cantidad
+    nuevo_stock = producto["stock"] - stock
     coleccion_productos.update_one({"nombre": nombre}, {"$set": {"stock": nuevo_stock}})
 
     # Crear factura
-    precio_total = producto["precio"] * cantidad
+    precio_total = producto["precio"] * stock
     factura = {
         "nombre_producto": producto["nombre"],
-        "cantidad": cantidad,
+        "cantidad": stock,
         "precio_total": precio_total,
         "fecha": datetime.now()
     }
