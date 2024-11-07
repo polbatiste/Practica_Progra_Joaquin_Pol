@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import List, Optional
 from pymongo import MongoClient
@@ -13,7 +13,7 @@ coleccion_facturas = db.facturas  # Nueva colección para almacenar las facturas
 
 router = APIRouter()
 
-# Modelo de producto
+# Modelos de producto y factura
 class Producto(BaseModel):
     categoria: str
     marca: str
@@ -22,12 +22,21 @@ class Producto(BaseModel):
     precio: float
     stock: int
 
-# Modelo de factura
 class Factura(BaseModel):
     nombre_producto: str
     cantidad: int
     precio_total: float
     fecha: datetime
+
+# Modelos para actualizar precio, stock y realizar venta
+class ActualizarPrecio(BaseModel):
+    precio: float
+
+class ActualizarStock(BaseModel):
+    stock: int
+
+class VenderProducto(BaseModel):
+    cantidad: int
 
 # Función para poblar la colección con productos iniciales
 def poblar_productos_iniciales():
@@ -56,13 +65,29 @@ def listar_productos():
     productos = list(coleccion_productos.find({}, {"_id": 0}))
     return productos
 
-@router.put("/productos/{nombre}", response_model=Producto)
-def actualizar_precio_producto(nombre: str, precio: float):
-    resultado = coleccion_productos.update_one({"nombre": nombre}, {"$set": {"precio": precio}})
+# Endpoint para actualizar el precio de un producto
+@router.put("/productos/precio/{nombre}", response_model=Producto)
+def actualizar_precio_producto(nombre: str, actualizar: ActualizarPrecio):
+    resultado = coleccion_productos.update_one({"nombre": nombre}, {"$set": {"precio": actualizar.precio}})
     if resultado.modified_count == 0:
         raise HTTPException(status_code=404, detail="Producto no encontrado o sin cambios")
     producto_actualizado = coleccion_productos.find_one({"nombre": nombre}, {"_id": 0})
     return producto_actualizado
+
+# Endpoint para actualizar el stock de un producto
+@router.put("/productos/stock/{nombre}")
+def actualizar_stock_producto(nombre: str, actualizar: ActualizarStock):
+    producto = coleccion_productos.find_one({"nombre": nombre})
+    if not producto:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    nuevo_stock = producto["stock"] + actualizar.stock
+    resultado = coleccion_productos.update_one({"nombre": nombre}, {"$set": {"stock": nuevo_stock}})
+    
+    if resultado.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Error al actualizar el stock")
+
+    return {"nombre": nombre, "stock": nuevo_stock}
 
 @router.delete("/productos/{nombre}")
 def eliminar_producto(nombre: str):
@@ -84,22 +109,20 @@ def buscar_productos(nombre: Optional[str] = None, categoria: Optional[str] = No
 
 # Endpoint para vender un producto
 @router.post("/productos/venta/{nombre}", response_model=Factura)
-def vender_producto(nombre: str, stock: int):
+def vender_producto(nombre: str, venta: VenderProducto):
     producto = coleccion_productos.find_one({"nombre": nombre})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if producto["stock"] < stock:
+    if producto["stock"] < venta.cantidad:
         raise HTTPException(status_code=400, detail="Stock insuficiente")
 
-    # Actualizar stock del producto
-    nuevo_stock = producto["stock"] - stock
+    nuevo_stock = producto["stock"] - venta.cantidad
     coleccion_productos.update_one({"nombre": nombre}, {"$set": {"stock": nuevo_stock}})
 
-    # Crear factura
-    precio_total = producto["precio"] * stock
+    precio_total = producto["precio"] * venta.cantidad
     factura = {
         "nombre_producto": producto["nombre"],
-        "cantidad": stock,
+        "cantidad": venta.cantidad,
         "precio_total": precio_total,
         "fecha": datetime.now()
     }

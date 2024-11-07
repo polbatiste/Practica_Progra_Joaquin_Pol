@@ -11,7 +11,6 @@ def get_productos():
     response = requests.get(API_URL)
     if response.status_code == 200:
         productos = response.json()
-        # Formatear precios y ajustar nombres de columna
         for producto in productos:
             producto["precio"] = f"{producto['precio']:.2f} €"
         df_productos = pd.DataFrame(productos)
@@ -19,7 +18,43 @@ def get_productos():
         return df_productos
     else:
         st.error("Error al cargar los productos")
-        return pd.DataFrame()  # Retornar un DataFrame vacío en caso de error
+        return pd.DataFrame()
+
+# Función para crear un nuevo producto
+def create_producto(categoria, marca, nombre, descripcion, precio, stock):
+    data = {"categoria": categoria, "marca": marca, "nombre": nombre, "descripcion": descripcion, "precio": precio, "stock": stock}
+    response = requests.post(API_URL, json=data)
+    if response.status_code == 201:
+        st.success("Producto añadido exitosamente")
+    else:
+        st.error("Error al añadir el producto")
+
+# Función para actualizar el precio de un producto
+def update_precio_producto(nombre, precio):
+    response = requests.put(f"{API_URL}/precio/{nombre}", json={"precio": precio})  # Endpoint específico para precio
+    if response.status_code == 200:
+        st.success("Precio actualizado exitosamente")
+    else:
+        st.error(f"Error al actualizar el precio: {response.json().get('detail')}")
+
+# Función para actualizar el stock de un producto
+def update_stock_producto(nombre, stock):
+    response = requests.put(f"{API_URL}/stock/{nombre}", json={"stock": stock})
+    if response.status_code == 200:
+        st.success("Stock actualizado exitosamente")
+    else:
+        st.error(f"Error al actualizar el stock: {response.json().get('detail')}")
+
+# Función para vender un producto
+def vender_producto(nombre, cantidad):
+    response = requests.post(f"{API_URL}/venta/{nombre}", json={"cantidad": cantidad})
+    if response.status_code == 200:
+        factura = response.json()
+        st.success("Venta realizada exitosamente")
+        st.write("Factura:")
+        st.json(factura)
+    else:
+        st.error(f"Error al realizar la venta: {response.json().get('detail')}")
 
 # Función para buscar productos por nombre o categoría
 def buscar_productos(nombre=None, categoria=None):
@@ -38,50 +73,6 @@ def buscar_productos(nombre=None, categoria=None):
     else:
         st.error("Error al buscar productos")
         return pd.DataFrame()
-
-# Función para crear un nuevo producto
-def create_producto(categoria, marca, nombre, descripcion, precio, stock):
-    data = {"categoria": categoria, "marca": marca, "nombre": nombre, "descripcion": descripcion, "precio": precio, "stock": stock}
-    response = requests.post(API_URL, json=data)
-    if response.status_code == 201:
-        st.success("Producto añadido exitosamente")
-    else:
-        st.error("Error al añadir el producto")
-
-# Función para actualizar el precio de un producto
-def update_precio_producto(nombre, precio):
-    response = requests.put(f"{API_URL}/{nombre}", json={"Precio": precio})
-    if response.status_code == 200:
-        st.success("Precio actualizado exitosamente")
-    else:
-        st.error("Error al actualizar el precio")
-
-# Función para eliminar un producto
-def delete_producto(nombre):
-    response = requests.delete(f"{API_URL}/{nombre}")
-    if response.status_code == 200:
-        st.success("Producto eliminado exitosamente")
-    else:
-        st.error("Error al eliminar el producto")
-
-# Función para actualizar el stock de un producto
-def update_stock_producto(nombre, stock):
-    response = requests.post(f"{API_URL}/Stock/{nombre}", json={"Stock": stock})
-    if response.status_code == 200:
-        st.success("Stock actualizado exitosamente")
-    else:
-        st.error("Error al actualizar el stock")
-
-# Función para vender un producto (restar stock y generar factura)
-def vender_producto(nombre, stock):
-    response = requests.post(f"{API_URL}/Venta/{nombre}", json={"Stock": stock})
-    if response.status_code == 200:
-        factura = response.json().get("factura")
-        st.success("Venta realizada exitosamente")
-        st.write("Factura:")
-        st.json(factura)
-    else:
-        st.error("Error al realizar la venta")
 
 # Mostrar todos los productos en una tabla
 st.subheader("Productos Registrados")
@@ -117,14 +108,15 @@ if not productos_df.empty:
     if st.button("Actualizar Stock"):
         update_stock_producto(nombre_stock, stock_cantidad)
 
-# Formulario para eliminar un producto
-st.subheader("Eliminar Producto")
+# Formulario para vender un producto
+st.subheader("Vender Producto")
 if not productos_df.empty:
-    nombre_eliminar = st.selectbox("Seleccione un producto para eliminar", productos_df["Nombre"])
-    if st.button("Eliminar Producto"):
-        delete_producto(nombre_eliminar)
+    nombre_venta = st.selectbox("Seleccione un producto para vender", productos_df["Nombre"])
+    cantidad_venta = st.number_input("Cantidad a vender", min_value=1, step=1)
+    if st.button("Realizar Venta"):
+        vender_producto(nombre_venta, cantidad_venta)
 
-# Formulario para buscar productos
+# Formulario para buscar productos por nombre o categoría
 st.subheader("Buscar Producto")
 buscar_nombre = st.text_input("Buscar por Nombre")
 buscar_categoria = st.text_input("Buscar por Categoría")
@@ -134,11 +126,3 @@ if st.button("Buscar"):
         st.table(productos_buscados)
     else:
         st.info("No se encontraron productos con los criterios de búsqueda.")
-
-# Formulario para vender un producto
-st.subheader("Vender Producto")
-if not productos_df.empty:
-    nombre_venta = st.selectbox("Seleccione un producto para vender", productos_df["Nombre"])
-    stock_venta = st.number_input("Cantidad a vender", min_value=1, step=1)
-    if st.button("Realizar Venta"):
-        vender_producto(nombre_venta, stock_venta)
