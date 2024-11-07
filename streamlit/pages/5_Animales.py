@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Configuración del endpoint de la API
-API_URL = "http://localhost:8000/api/v1/animals"
+API_URL = "http://app:8000/api/v1/animals"
 
 # Título de la página
 st.title("Alta de Animales - Clínica Veterinaria")
