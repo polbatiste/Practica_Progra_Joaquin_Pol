@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_BASE_URL = "http://localhost:8000/api/v1/owners"
+API_BASE_URL = "http://app:8000/api/v1/owners"
 
 st.title("Alta de Dueños - Clínica Veterinaria")
 
