@@ -34,7 +34,7 @@ else:
     st.error("No se pudieron cargar los datos de citas o el DataFrame está vacío.")
     total_citas = total_clientes = '0'
 
-# Calcular total de animales
+# Total total de animales
 if df_animals is not None and not df_animals.empty:
     total_animales = str(df_animals.shape[0])
 else:

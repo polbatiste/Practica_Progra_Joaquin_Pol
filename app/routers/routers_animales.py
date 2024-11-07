@@ -44,7 +44,7 @@ def create_animal(animal: Animal):
 def get_animals():
     return animals_db
 
-# Endpoint para obtener el total de animales (para el Dashboard)
+# Endpoint para obtener el total de animales para el Dashboard
 @router.get("/animals/count")
 def get_animal_count():
     return {"total_animals": len(animals_db)}
