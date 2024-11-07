@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 import random
 
 router = APIRouter()
 
 # Definición del modelo de datos para Animal
 class Animal(BaseModel):
-    id: Optional[str] = None  # El ID se generará automáticamente si no se proporciona
+    id: str = None  # ID generado automáticamente
     name: str
     species: str
     breed: str
@@ -31,7 +31,7 @@ def create_animal(animal: Animal):
             detail="El animal ya existe para este propietario"
         )
     
-    # Generación de un ID único para el animal
+    # Generación de un ID único
     animal.id = generate_animal_id()
     while any(existing_animal["id"] == animal.id for existing_animal in animals_db):
         animal.id = generate_animal_id()
@@ -44,28 +44,7 @@ def create_animal(animal: Animal):
 def get_animals():
     return animals_db
 
-# Endpoint para obtener un animal por ID
-@router.get("/animals/{animal_id}", response_model=Animal)
-def get_animal(animal_id: str):
-    animal = next((a for a in animals_db if a["id"] == animal_id), None)
-    if animal is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Animal no encontrado")
-    return animal
-
-# Endpoint para actualizar un animal por ID
-@router.put("/animals/{animal_id}", response_model=Animal)
-def update_animal(animal_id: str, animal: Animal):
-    for idx, existing_animal in enumerate(animals_db):
-        if existing_animal["id"] == animal_id:
-            updated_animal = animal.dict()
-            updated_animal["id"] = animal_id  # Asegurar que el ID no cambie
-            animals_db[idx] = updated_animal
-            return updated_animal
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Animal no encontrado")
-
-# Endpoint para eliminar un animal por ID
-@router.delete("/animals/{animal_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_animal(animal_id: str):
-    global animals_db
-    animals_db = [animal for animal in animals_db if animal["id"] != animal_id]
-    return {"message": "Animal eliminado exitosamente"}
+# Endpoint para obtener el total de animales (para el Dashboard)
+@router.get("/animals/count")
+def get_animal_count():
+    return {"total_animals": len(animals_db)}
