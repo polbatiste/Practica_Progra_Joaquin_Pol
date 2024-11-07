@@ -5,3 +5,4 @@ sqlalchemy
 pytest
 flake8
 pydantic[email]
+pymongo

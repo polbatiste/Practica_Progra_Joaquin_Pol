@@ -3,8 +3,9 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta, time
 
-# Definir la URL de la API de citas
+# Definir la URL de la API de citas y tratamientos
 url_api = "http://app:8000/api/v1/appointments"
+url_tratamientos = "http://app:8000/api/v1/tratamientos"
 
 # Función para obtener todas las citas existentes de la API
 def obtener_citas():
@@ -14,6 +15,17 @@ def obtener_citas():
         return respuesta.json()  # Devuelve una lista de citas en formato JSON
     except requests.exceptions.RequestException:
         st.error("No se pudo conectar con el servidor. Inténtelo más tarde.")
+        return []
+
+# Función para obtener la lista de tratamientos desde la API
+def obtener_tratamientos():
+    try:
+        respuesta = requests.get(url_tratamientos)
+        respuesta.raise_for_status()
+        tratamientos = respuesta.json()
+        return [tratamiento["nombre"] for tratamiento in tratamientos]
+    except requests.exceptions.RequestException:
+        st.error("No se pudo obtener la lista de tratamientos. Inténtelo más tarde.")
         return []
 
 # Generar una lista de horas de 9:00 AM a 8:00 PM en intervalos de 30 minutos
@@ -102,13 +114,14 @@ else:
 
 # Sección para el formulario de creación/actualización de citas
 st.subheader("Programar o Modificar Cita")
+tratamientos = obtener_tratamientos()  # Obtener lista de tratamientos desde la API
 with st.form("formulario_cita"):
     id_cita = st.text_input("ID de la Cita (solo para modificar una cita ya existente)")
     nombre_cliente = st.text_input("Nombre de Cliente")
     nombre_mascota = st.text_input("Nombre de Mascota")
     fecha = st.date_input("Fecha")
     hora = st.selectbox("Hora", opciones_de_horas)
-    tratamiento = st.text_input("Tratamiento")
+    tratamiento = st.selectbox("Tratamiento", tratamientos)  # Menú desplegable de tratamientos
     motivo = st.text_area("Motivo")
 
     enviado = st.form_submit_button("Enviar")
