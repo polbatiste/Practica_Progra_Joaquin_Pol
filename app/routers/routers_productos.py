@@ -9,6 +9,7 @@ MONGO_URI = "mongodb://root:example@mongodb:27017/?authSource=admin"
 client = MongoClient(MONGO_URI)
 db = client.clinica_veterinaria
 coleccion_productos = db.productos
+coleccion_facturas = db.facturas  # Nueva colección para almacenar las facturas
 
 router = APIRouter()
 
@@ -20,6 +21,13 @@ class Producto(BaseModel):
     descripcion: Optional[str] = None
     precio: float
     stock: int
+
+# Modelo de factura
+class Factura(BaseModel):
+    nombre_producto: str
+    cantidad: int
+    precio_total: float
+    fecha: datetime
 
 # Función para poblar la colección con productos iniciales
 def poblar_productos_iniciales():
@@ -63,6 +71,7 @@ def eliminar_producto(nombre: str):
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return {"mensaje": "Producto eliminado exitosamente"}
 
+# Endpoint para buscar productos por nombre o categoría
 @router.get("/productos/busqueda", response_model=List[Producto])
 def buscar_productos(nombre: Optional[str] = None, categoria: Optional[str] = None):
     filtro = {}
@@ -73,26 +82,27 @@ def buscar_productos(nombre: Optional[str] = None, categoria: Optional[str] = No
     productos = list(coleccion_productos.find(filtro, {"_id": 0}))
     return productos
 
-@router.post("/productos/venta/{nombre}")
+# Endpoint para vender un producto
+@router.post("/productos/venta/{nombre}", response_model=Factura)
 def vender_producto(nombre: str, cantidad: int):
     producto = coleccion_productos.find_one({"nombre": nombre})
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     if producto["stock"] < cantidad:
         raise HTTPException(status_code=400, detail="Stock insuficiente")
+
+    # Actualizar stock del producto
     nuevo_stock = producto["stock"] - cantidad
     coleccion_productos.update_one({"nombre": nombre}, {"$set": {"stock": nuevo_stock}})
+
+    # Crear factura
+    precio_total = producto["precio"] * cantidad
     factura = {
-        "nombre": producto["nombre"],
+        "nombre_producto": producto["nombre"],
         "cantidad": cantidad,
-        "precio_total": producto["precio"] * cantidad,
+        "precio_total": precio_total,
         "fecha": datetime.now()
     }
-    return {"mensaje": "Venta realizada exitosamente", "factura": factura}
+    coleccion_facturas.insert_one(factura)  # Guardar la factura en la base de datos
 
-@router.post("/productos/stock/{nombre}")
-def actualizar_stock(nombre: str, cantidad: int):
-    resultado = coleccion_productos.update_one({"nombre": nombre}, {"$inc": {"stock": cantidad}})
-    if resultado.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return {"mensaje": "Stock actualizado exitosamente"}
+    return factura
