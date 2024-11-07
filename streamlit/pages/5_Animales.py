@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas as pd
 
 # Configuración del endpoint de la API
 API_URL = "http://app:8000/api/v1/animals"
@@ -44,8 +45,11 @@ with st.form("animal_form"):
     if submitted:
         create_animal(name, species, breed, age, owner_id)
 
-# Mostrar todos los animales registrados
+# Mostrar todos los animales registrados en una tabla
 st.subheader("Animales Registrados")
 animals = get_animals()
 if animals:
-    st.write(animals)
+    df_animals = pd.DataFrame(animals)
+    st.table(df_animals)
+else:
+    st.info("No hay animales registrados.")
