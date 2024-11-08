@@ -35,7 +35,6 @@ def generar_horas_inicio():
     fin = time(20, 0)  # 8:00 PM
     while hora_actual <= fin:
         horas.append(hora_actual)
-        # Incremento de 30 minutos
         hora_actual = (datetime.combine(datetime.today(), hora_actual) + timedelta(minutes=30)).time()
     return horas
 
@@ -46,11 +45,10 @@ opciones_de_horas = generar_horas_inicio()
 def asignar_consulta(fecha, hora, citas):
     consultas_disponibles = ["1", "2", "3"]  # Consultas disponibles
     for consulta in consultas_disponibles:
-        # Verificar si la consulta está libre para la fecha y hora dadas
         if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
             return consulta  # Devuelve la consulta disponible
     st.error("No hay consultas disponibles para la fecha y hora seleccionadas.")
-    return None  # Devuelve None si no hay consultas disponibles
+    return None
 
 # Función para crear o actualizar una cita en la API
 def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, tratamiento, motivo, citas, es_actualizacion=False):
@@ -58,9 +56,8 @@ def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, 
     hora_formateada = hora.strftime('%H:%M:%S')
     consulta = asignar_consulta(fecha_formateada, hora_formateada, citas)
     if not consulta:
-        return  # Si no hay consulta disponible, salir de la función
+        return
 
-    # Crear el cuerpo de la solicitud con los datos de la cita
     datos_cita = {
         "id": id_cita if id_cita else None,
         "client_name": nombre_cliente,
@@ -73,7 +70,6 @@ def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, 
     }
 
     try:
-        # Realizar una llamada PUT si es una actualización, de lo contrario, POST
         if es_actualizacion and id_cita:
             respuesta = requests.put(f"{url_api}/{id_cita}", json=datos_cita)
         else:
@@ -94,10 +90,8 @@ st.title("Agenda tu Cita en la Clínica Veterinaria")
 st.subheader("Citas Programadas")
 citas = obtener_citas()
 if citas:
-    # Convertir la lista de citas a un DataFrame de pandas para renombrar las columnas
     citas_df = pd.DataFrame(citas)
     if not citas_df.empty:
-        # Renombrar las columnas para mostrarlas de forma más clara y profesional
         citas_df.rename(columns={
             "id": "ID de Cita",
             "client_name": "Nombre de Cliente",
@@ -114,14 +108,14 @@ else:
 
 # Sección para el formulario de creación/actualización de citas
 st.subheader("Programar o Modificar Cita")
-tratamientos = obtener_tratamientos()  # Obtener lista de tratamientos desde la API
+tratamientos = obtener_tratamientos()
 with st.form("formulario_cita"):
     id_cita = st.text_input("ID de la Cita (solo para modificar una cita ya existente)")
     nombre_cliente = st.text_input("Nombre de Cliente")
     nombre_mascota = st.text_input("Nombre de Mascota")
     fecha = st.date_input("Fecha")
     hora = st.selectbox("Hora", opciones_de_horas)
-    tratamiento = st.selectbox("Tratamiento", tratamientos)  # Menú desplegable de tratamientos
+    tratamiento = st.selectbox("Tratamiento", tratamientos)
     motivo = st.text_area("Motivo")
 
     enviado = st.form_submit_button("Enviar")

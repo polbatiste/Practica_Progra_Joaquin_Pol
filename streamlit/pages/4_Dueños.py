@@ -20,6 +20,7 @@ def create_owner(nombre, dni, direccion, telefono, correo_electronico):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Dueño registrado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al registrar dueño")
 

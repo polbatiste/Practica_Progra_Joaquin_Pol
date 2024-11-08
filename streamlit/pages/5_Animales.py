@@ -20,6 +20,7 @@ def create_animal(name, species, breed, age, owner_id):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Animal registrado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al registrar el animal")
 

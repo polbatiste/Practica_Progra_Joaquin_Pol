@@ -38,6 +38,7 @@ def create_tratamiento(tipo, nombre, descripcion, precio):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Tratamiento añadido exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al añadir el tratamiento")
 
@@ -52,6 +53,7 @@ def update_tratamiento(nombre, tipo, descripcion, precio):
     response = requests.put(f"{API_URL}/{nombre}", json=data)
     if response.status_code == 200:
         st.success("Tratamiento actualizado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al actualizar el tratamiento")
 
@@ -60,6 +62,7 @@ def delete_tratamiento(nombre):
     response = requests.delete(f"{API_URL}/{nombre}")
     if response.status_code == 200:
         st.success("Tratamiento eliminado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al eliminar el tratamiento")
 

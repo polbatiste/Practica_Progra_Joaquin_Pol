@@ -26,6 +26,7 @@ def create_producto(categoria, marca, nombre, descripcion, precio, stock):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Producto añadido exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error("Error al añadir el producto")
 
@@ -34,6 +35,7 @@ def update_precio_producto(nombre, precio):
     response = requests.put(f"{API_URL}/precio/{nombre}", json={"precio": precio})  # Endpoint específico para precio
     if response.status_code == 200:
         st.success("Precio actualizado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error(f"Error al actualizar el precio: {response.json().get('detail')}")
 
@@ -42,6 +44,7 @@ def update_stock_producto(nombre, stock):
     response = requests.put(f"{API_URL}/stock/{nombre}", json={"stock": stock})
     if response.status_code == 200:
         st.success("Stock actualizado exitosamente")
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error(f"Error al actualizar el stock: {response.json().get('detail')}")
 
@@ -53,6 +56,7 @@ def vender_producto(nombre, cantidad):
         st.success("Venta realizada exitosamente")
         st.write("Factura:")
         st.json(factura)
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
     else:
         st.error(f"Error al realizar la venta: {response.json().get('detail')}")
 

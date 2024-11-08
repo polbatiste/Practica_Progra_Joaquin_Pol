@@ -67,7 +67,7 @@ def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, 
 
         if respuesta.status_code in [200, 201]:
             st.success(f"Cita gestionada exitosamente en la consulta {consulta}")
-            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
         else:
             st.error(f"Error al gestionar la cita: {respuesta.text}")
     except requests.exceptions.RequestException:
@@ -193,6 +193,6 @@ if state.get('eventClick') is not None:
         status, _ = send(None, method="DELETE", appointment_id=id_evento)
         if status == 204:
             st.success("Cita eliminada exitosamente")
-            st.write('<script>setTimeout(function(){ window.location.reload(); }, 1000);</script>', unsafe_allow_html=True)
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
         else:
             st.error("Error al eliminar la cita.")
