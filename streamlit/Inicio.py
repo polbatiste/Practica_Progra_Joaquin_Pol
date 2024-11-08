@@ -17,7 +17,7 @@ st.sidebar.success("Selecciona una página para gestionar las funciones del sist
 
 st.markdown(
     """
-    Este sistema de gestión veterinaria está diseñado para facilitar las operaciones diarias de la clínica, basado en una arquitectura modular con microservicios. 
+    Este sistema de gestión veterinaria está diseñado para facilitar las operaciones diarias de la clínica. 
     Las funcionalidades principales se dividen en varias páginas:
 
     1. **Dashboard**: Visualización de estadísticas clave y datos importantes de la clínica veterinaria, como el número de citas, tratamientos realizados y productos en inventario.

@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 
 API_URL = "http://app:8000/api/v1/productos"
+API_FACTURAS_URL = "http://app:8000/api/v1/facturas"  # Endpoint para obtener el historial de facturas
 
 st.title("Gestión de Productos - Clínica Veterinaria")
 
@@ -32,7 +33,7 @@ def create_producto(categoria, marca, nombre, descripcion, precio, stock):
 
 # Función para actualizar el precio de un producto
 def update_precio_producto(nombre, precio):
-    response = requests.put(f"{API_URL}/precio/{nombre}", json={"precio": precio})  # Endpoint específico para precio
+    response = requests.put(f"{API_URL}/precio/{nombre}", json={"precio": precio})
     if response.status_code == 200:
         st.success("Precio actualizado exitosamente")
         st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
@@ -78,6 +79,26 @@ def buscar_productos(nombre=None, categoria=None):
         st.error("Error al buscar productos")
         return pd.DataFrame()
 
+# Función para obtener el historial de facturas
+def get_historial_facturas():
+    response = requests.get(API_FACTURAS_URL)
+    if response.status_code == 200:
+        facturas = response.json()
+        # Convertir la lista de facturas a DataFrame
+        df_facturas = pd.DataFrame(facturas)
+        # Verificar que las columnas esperadas estén en el DataFrame
+        if "nombre_producto" in df_facturas.columns and "precio_total" in df_facturas.columns:
+            # Formatear la columna de precio y renombrar columnas
+            df_facturas["precio_total"] = df_facturas["precio_total"].apply(lambda x: f"{x:.2f} €")
+            df_facturas.rename(columns={"nombre_producto": "Nombre", "precio_total": "Precio", "cantidad": "Cantidad", "fecha": "Fecha"}, inplace=True)
+            return df_facturas[["Nombre", "Cantidad", "Precio", "Fecha"]]  # Reordenar columnas
+        else:
+            st.warning("No se encontraron las columnas esperadas en el historial de facturas.")
+            return pd.DataFrame()
+    else:
+        st.error("Error al cargar el historial de facturas")
+        return pd.DataFrame()
+
 # Mostrar todos los productos en una tabla
 st.subheader("Productos Registrados")
 productos_df = get_productos()
@@ -119,6 +140,14 @@ if not productos_df.empty:
     cantidad_venta = st.number_input("Cantidad a vender", min_value=1, step=1)
     if st.button("Realizar Venta"):
         vender_producto(nombre_venta, cantidad_venta)
+
+# Mostrar historial de facturas
+st.subheader("Historial de Facturas")
+facturas_df = get_historial_facturas()
+if not facturas_df.empty:
+    st.table(facturas_df)
+else:
+    st.info("No se encontraron facturas en el historial.")
 
 # Formulario para buscar productos por nombre o categoría
 st.subheader("Buscar Producto")

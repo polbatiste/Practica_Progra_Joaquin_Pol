@@ -129,3 +129,9 @@ def vender_producto(nombre: str, venta: VenderProducto):
     coleccion_facturas.insert_one(factura)  # Guardar la factura en la base de datos
 
     return factura
+
+# Endpoint para obtener el historial de facturas
+@router.get("/facturas", response_model=List[Factura])
+def obtener_historial_facturas():
+    facturas = list(coleccion_facturas.find({}, {"_id": 0}))
+    return facturas
