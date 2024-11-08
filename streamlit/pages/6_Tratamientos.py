@@ -12,17 +12,17 @@ st.title("Gestión de Tratamientos - Clínica Veterinaria")
 def get_tratamientos():
     response = requests.get(API_URL)
     if response.status_code == 200:
-        # Normalizar claves y asegurarse de que sean consistentes
         tratamientos = response.json()
-        tratamientos_normalizados = []
-        for tratamiento in tratamientos:
-            tratamientos_normalizados.append({
+        # Normalizar y estructurar los datos para mostrar en la tabla
+        return [
+            {
                 "Nombre": tratamiento.get("nombre", ""),
                 "Tipo": tratamiento.get("tipo", ""),
-                "Descripcion": tratamiento.get("descripcion", ""),
-                "Precio": tratamiento.get("precio", 0.0)
-            })
-        return tratamientos_normalizados
+                "Descripción": tratamiento.get("descripcion", ""),
+                "Precio": f"{tratamiento.get('precio', 0.0):.2f} €"
+            }
+            for tratamiento in tratamientos
+        ]
     else:
         st.error("Error al cargar los tratamientos")
         return []
@@ -38,7 +38,8 @@ def create_tratamiento(tipo, nombre, descripcion, precio):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Tratamiento añadido exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        # Recargar la página usando HTML
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error("Error al añadir el tratamiento")
 
@@ -53,7 +54,7 @@ def update_tratamiento(nombre, tipo, descripcion, precio):
     response = requests.put(f"{API_URL}/{nombre}", json=data)
     if response.status_code == 200:
         st.success("Tratamiento actualizado exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error("Error al actualizar el tratamiento")
 
@@ -62,7 +63,7 @@ def delete_tratamiento(nombre):
     response = requests.delete(f"{API_URL}/{nombre}")
     if response.status_code == 200:
         st.success("Tratamiento eliminado exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error("Error al eliminar el tratamiento")
 
@@ -70,12 +71,8 @@ def delete_tratamiento(nombre):
 st.subheader("Tratamientos Registrados")
 tratamientos = get_tratamientos()
 if tratamientos:
-    # Convertir los datos a un DataFrame y formatear la columna de precios
+    # Convertir los datos a un DataFrame y mostrarlo en la tabla
     df = pd.DataFrame(tratamientos)
-    if 'Precio' in df.columns:
-        df['Precio'] = df['Precio'].apply(lambda x: f"{x:.2f} €")
-    # Cambiar los encabezados de la tabla a mayúscula en la primera letra
-    df.columns = [col.capitalize() for col in df.columns]
     st.table(df)
 
 # Sección para añadir o modificar tratamientos
@@ -86,9 +83,8 @@ with st.form("tratamiento_form"):
     descripcion = st.text_area("Descripción")
     precio = st.number_input("Precio", min_value=0.0, step=0.1, format="%.2f")
 
-    submitted = st.form_submit_button("Guardar Tratamiento")
-    if submitted:
-        # Verificar si el tratamiento ya existe para decidir entre crear o actualizar
+    if st.form_submit_button("Guardar Tratamiento"):
+        # Decidir entre crear o actualizar según si el tratamiento ya existe
         if any(tratamiento['Nombre'] == nombre for tratamiento in tratamientos):
             update_tratamiento(nombre, tipo, descripcion, precio)
         else:
@@ -97,7 +93,7 @@ with st.form("tratamiento_form"):
 # Sección para eliminar un tratamiento
 st.subheader("Eliminar Tratamiento")
 if tratamientos:
-    nombre_eliminar = st.selectbox("Seleccione un tratamiento para eliminar", [t['Nombre'] for t in tratamientos if 'Nombre' in t])
+    nombre_eliminar = st.selectbox("Seleccione un tratamiento para eliminar", [t['Nombre'] for t in tratamientos])
     if st.button("Eliminar"):
         delete_tratamiento(nombre_eliminar)
 else:

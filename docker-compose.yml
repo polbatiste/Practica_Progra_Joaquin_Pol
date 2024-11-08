@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: ./app  # Asegúrate de que el Dockerfile esté dentro de esta carpeta
+      context: ./app  # Ruta del Dockerfile para la aplicación FastAPI
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -11,11 +11,11 @@ services:
     depends_on:
       - mongodb
     environment:
-      - MONGO_URI=mongodb://root:example@mongodb:27017/clinica_veterinaria?authSource=admin  # Asegura el nombre de la BD aquí
+      - MONGO_URI=mongodb://root:example@mongodb:27017/clinica_veterinaria?authSource=admin  # URI de conexión a MongoDB
 
   streamlit:
     build:
-      context: ./streamlit  # Asegúrate de que el Dockerfile esté dentro de esta carpeta
+      context: ./streamlit  # Ruta del Dockerfile para la aplicación Streamlit
       dockerfile: Dockerfile
     depends_on:
       - app
@@ -35,7 +35,7 @@ services:
     networks:
       - deploy_network
     container_name: mongodb
-    command: mongod --quiet --auth  # Reducir logs y habilitar autenticación
+    command: mongod --quiet --auth  # Reducir los logs y habilitar autenticación
 
 networks:
   deploy_network:

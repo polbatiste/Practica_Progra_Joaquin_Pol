@@ -5,46 +5,46 @@ import random
 
 router = APIRouter()
 
-# Definición del modelo de datos para Animal
+# Modelo de datos para representar un Animal
 class Animal(BaseModel):
-    id: str = None  # ID generado automáticamente
-    name: str
-    species: str
-    breed: str
-    age: int
-    owner_id: int
+    id: str = None  # El ID se generará automáticamente
+    name: str       # Nombre del animal
+    species: str    # Especie del animal (e.g., perro, gato)
+    breed: str      # Raza del animal
+    age: int        # Edad del animal
+    owner_id: int   # ID del propietario del animal
 
-# Base de datos simulada en memoria
+# Base de datos simulada en memoria para almacenar animales
 animals_db = []
 
-# Generador de ID único para los animales
+# Función para generar un ID único de animal
 def generate_animal_id():
     return str(random.randint(1000, 9999))
 
 # Endpoint para crear un nuevo animal
 @router.post("/animals", response_model=Animal, status_code=status.HTTP_201_CREATED)
 def create_animal(animal: Animal):
-    # Validación para evitar duplicados (según nombre y propietario)
-    if any(existing_animal["name"] == animal.name and existing_animal["owner_id"] == animal.owner_id for existing_animal in animals_db):
+    # Comprobación de duplicados: mismo nombre y propietario
+    if any(existing["name"] == animal.name and existing["owner_id"] == animal.owner_id for existing in animals_db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El animal ya existe para este propietario"
         )
     
-    # Generación de un ID único
+    # Generación de un ID único que no esté en la base de datos
     animal.id = generate_animal_id()
-    while any(existing_animal["id"] == animal.id for existing_animal in animals_db):
+    while any(existing["id"] == animal.id for existing in animals_db):
         animal.id = generate_animal_id()
     
-    animals_db.append(animal.dict())
+    animals_db.append(animal.dict())  # Guarda el animal en la base de datos en memoria
     return animal
 
-# Endpoint para obtener todos los animales
+# Endpoint para obtener todos los animales en la base de datos
 @router.get("/animals", response_model=List[Animal])
 def get_animals():
     return animals_db
 
-# Endpoint para obtener el total de animales para el Dashboard
+# Endpoint para obtener el número total de animales
 @router.get("/animals/count")
 def get_animal_count():
     return {"total_animals": len(animals_db)}

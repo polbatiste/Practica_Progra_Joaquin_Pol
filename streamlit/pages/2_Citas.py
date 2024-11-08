@@ -3,21 +3,21 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta, time
 
-# Definir la URL de la API de citas y tratamientos
+# Definir las URLs de la API
 url_api = "http://app:8000/api/v1/appointments"
 url_tratamientos = "http://app:8000/api/v1/tratamientos"
 
-# Función para obtener todas las citas existentes de la API
+# Función para obtener citas desde la API
 def obtener_citas():
     try:
         respuesta = requests.get(url_api)
         respuesta.raise_for_status()
-        return respuesta.json()  # Devuelve una lista de citas en formato JSON
+        return respuesta.json()
     except requests.exceptions.RequestException:
         st.error("No se pudo conectar con el servidor. Inténtelo más tarde.")
         return []
 
-# Función para obtener la lista de tratamientos desde la API
+# Función para obtener tratamientos desde la API
 def obtener_tratamientos():
     try:
         respuesta = requests.get(url_tratamientos)
@@ -31,22 +31,21 @@ def obtener_tratamientos():
 # Generar una lista de horas de 9:00 AM a 8:00 PM en intervalos de 30 minutos
 def generar_horas_inicio():
     horas = []
-    hora_actual = time(9, 0)  # 9:00 AM
-    fin = time(20, 0)  # 8:00 PM
+    hora_actual = time(9, 0)
+    fin = time(20, 0)
     while hora_actual <= fin:
         horas.append(hora_actual)
         hora_actual = (datetime.combine(datetime.today(), hora_actual) + timedelta(minutes=30)).time()
     return horas
 
-# Crear lista de opciones de horas
 opciones_de_horas = generar_horas_inicio()
 
-# Función para asignar automáticamente una consulta a la cita
+# Función para asignar una consulta disponible automáticamente
 def asignar_consulta(fecha, hora, citas):
-    consultas_disponibles = ["1", "2", "3"]  # Consultas disponibles
+    consultas_disponibles = ["1", "2", "3"]
     for consulta in consultas_disponibles:
         if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
-            return consulta  # Devuelve la consulta disponible
+            return consulta
     st.error("No hay consultas disponibles para la fecha y hora seleccionadas.")
     return None
 
@@ -86,7 +85,7 @@ def crear_actualizar_cita(id_cita, nombre_cliente, nombre_mascota, fecha, hora, 
 # Título de la aplicación
 st.title("Agenda tu Cita en la Clínica Veterinaria")
 
-# Sección para mostrar las citas existentes
+# Sección para mostrar las citas programadas
 st.subheader("Citas Programadas")
 citas = obtener_citas()
 if citas:
@@ -106,7 +105,7 @@ if citas:
 else:
     st.info("No hay citas programadas en este momento.")
 
-# Sección para el formulario de creación/actualización de citas
+# Formulario de creación/modificación de citas
 st.subheader("Programar o Modificar Cita")
 tratamientos = obtener_tratamientos()
 with st.form("formulario_cita"):
@@ -122,7 +121,7 @@ with st.form("formulario_cita"):
     if enviado:
         if fecha.weekday() == 6:
             st.error("No se pueden programar citas los domingos. Por favor, elija otra fecha.")
-        elif not nombre_cliente or not nombre_mascota or not fecha or not hora or not tratamiento or not motivo:
+        elif not all([nombre_cliente, nombre_mascota, fecha, hora, tratamiento, motivo]):
             st.error("Por favor, complete todos los campos del formulario.")
         else:
             es_actualizacion = bool(id_cita)
