@@ -2,9 +2,11 @@ import streamlit as st
 import requests
 import pandas as pd
 
+# Configuración de los endpoints de la API para productos y facturas
 API_URL = "http://app:8000/api/v1/productos"
-API_FACTURAS_URL = "http://app:8000/api/v1/facturas"  # Endpoint para obtener el historial de facturas
+API_FACTURAS_URL = "http://app:8000/api/v1/facturas"
 
+# Título de la página
 st.title("Gestión de Productos - Clínica Veterinaria")
 
 # Función para obtener todos los productos y formatear los datos
@@ -14,9 +16,7 @@ def get_productos():
         productos = response.json()
         for producto in productos:
             producto["precio"] = f"{producto['precio']:.2f} €"
-        df_productos = pd.DataFrame(productos)
-        df_productos.columns = [col.capitalize() for col in df_productos.columns]
-        return df_productos
+        return pd.DataFrame(productos).rename(columns=str.capitalize)
     else:
         st.error("Error al cargar los productos")
         return pd.DataFrame()
@@ -36,7 +36,7 @@ def update_precio_producto(nombre, precio):
     response = requests.put(f"{API_URL}/precio/{nombre}", json={"precio": precio})
     if response.status_code == 200:
         st.success("Precio actualizado exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error(f"Error al actualizar el precio: {response.json().get('detail')}")
 
@@ -45,11 +45,11 @@ def update_stock_producto(nombre, stock):
     response = requests.put(f"{API_URL}/stock/{nombre}", json={"stock": stock})
     if response.status_code == 200:
         st.success("Stock actualizado exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error(f"Error al actualizar el stock: {response.json().get('detail')}")
 
-# Función para vender un producto
+# Función para vender un producto y mostrar la factura
 def vender_producto(nombre, cantidad):
     response = requests.post(f"{API_URL}/venta/{nombre}", json={"cantidad": cantidad})
     if response.status_code == 200:
@@ -57,18 +57,13 @@ def vender_producto(nombre, cantidad):
         st.success("Venta realizada exitosamente")
         st.write("Factura:")
         st.json(factura)
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error(f"Error al realizar la venta: {response.json().get('detail')}")
 
 # Función para buscar productos por nombre o categoría
 def buscar_productos(nombre=None, categoria=None):
-    params = {}
-    if nombre:
-        params["nombre"] = nombre
-    if categoria:
-        params["categoria"] = categoria
-
+    params = {"nombre": nombre, "categoria": categoria}
     response = requests.get(f"{API_URL}/busqueda", params=params)
     if response.status_code == 200:
         productos = response.json()
@@ -84,11 +79,8 @@ def get_historial_facturas():
     response = requests.get(API_FACTURAS_URL)
     if response.status_code == 200:
         facturas = response.json()
-        # Convertir la lista de facturas a DataFrame
         df_facturas = pd.DataFrame(facturas)
-        # Verificar que las columnas esperadas estén en el DataFrame
         if "nombre_producto" in df_facturas.columns and "precio_total" in df_facturas.columns:
-            # Formatear la columna de precio y renombrar columnas
             df_facturas["precio_total"] = df_facturas["precio_total"].apply(lambda x: f"{x:.2f} €")
             df_facturas.rename(columns={"nombre_producto": "Nombre", "precio_total": "Precio", "cantidad": "Cantidad", "fecha": "Fecha"}, inplace=True)
             return df_facturas[["Nombre", "Cantidad", "Precio", "Fecha"]]  # Reordenar columnas
@@ -117,7 +109,7 @@ with st.form("producto_form"):
     if st.form_submit_button("Añadir Producto"):
         create_producto(categoria, marca, nombre, descripcion, precio, stock)
 
-# Formulario para actualizar el precio de un producto existente
+# Formulario para actualizar el precio de un producto
 st.subheader("Modificar Precio de Producto")
 if not productos_df.empty:
     nombre_producto = st.selectbox("Seleccione un producto", productos_df["Nombre"])
@@ -125,7 +117,7 @@ if not productos_df.empty:
     if st.button("Actualizar Precio"):
         update_precio_producto(nombre_producto, nuevo_precio)
 
-# Formulario para actualizar el stock de un producto existente
+# Formulario para actualizar el stock de un producto
 st.subheader("Actualizar Stock de Producto")
 if not productos_df.empty:
     nombre_stock = st.selectbox("Seleccione un producto para actualizar stock", productos_df["Nombre"])

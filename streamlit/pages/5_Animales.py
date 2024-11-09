@@ -20,7 +20,8 @@ def create_animal(name, species, breed, age, owner_id):
     response = requests.post(API_URL, json=data)
     if response.status_code == 201:
         st.success("Animal registrado exitosamente")
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)  # Recargar la página automáticamente
+        # Recargar la página usando HTML
+        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
     else:
         st.error("Error al registrar el animal")
 
@@ -33,7 +34,7 @@ def get_animals():
         st.error("Error al cargar los animales")
         return []
 
-# Sección de formulario para registrar un nuevo animal
+# Formulario para registrar un nuevo animal
 st.subheader("Registrar un Nuevo Animal")
 with st.form("animal_form"):
     name = st.text_input("Nombre del Animal")
@@ -42,8 +43,7 @@ with st.form("animal_form"):
     age = st.number_input("Edad", min_value=0, step=1)
     owner_id = st.number_input("ID del Dueño", min_value=0, step=1)
 
-    submitted = st.form_submit_button("Registrar")
-    if submitted:
+    if st.form_submit_button("Registrar"):
         create_animal(name, species, breed, age, owner_id)
 
 # Mostrar todos los animales registrados en una tabla
