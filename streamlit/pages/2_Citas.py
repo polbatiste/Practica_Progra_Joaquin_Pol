@@ -15,9 +15,7 @@ def obtener_dueños():
     try:
         respuesta = requests.get(url_owners)
         respuesta.raise_for_status()
-        dueños = respuesta.json()
-        st.write(f"Debug - Total dueños cargados: {len(dueños)}")
-        return dueños
+        return respuesta.json()
     except:
         st.error("No se pudo obtener la lista de dueños")
         return []
@@ -26,9 +24,7 @@ def obtener_animales():
     try:
         respuesta = requests.get(url_animals)
         respuesta.raise_for_status()
-        animales = respuesta.json()
-        st.write(f"Debug - Total animales cargados: {len(animales)}")
-        return animales
+        return respuesta.json()
     except:
         st.error("No se pudo obtener la lista de animales")
         return []
@@ -112,7 +108,6 @@ opciones_de_horas = generar_horas_inicio()
 # Mostrar citas programadas
 st.subheader("Citas Programadas")
 if citas:
-    # Enriquecer datos de citas con nombres de dueño y mascota
     citas_enriquecidas = []
     for cita in citas:
         dueño = next((d for d in dueños if d['id'] == cita['owner_id']), None)
@@ -144,11 +139,7 @@ with st.form("formulario_cita"):
     # Selector de animal filtrado por dueño
     animal_id = None
     if owner_id:
-        st.write("Debug - Owner ID:", owner_id)
         animales_dueño = [a for a in animales if a['owner_id'] == owner_id]
-        st.write("Debug - Animales encontrados:", len(animales_dueño))
-        st.write("Debug - IDs de animales encontrados:", [a['id'] for a in animales_dueño])
-        
         if animales_dueño:
             animal_options = {a['name']: a['id'] for a in animales_dueño}
             selected_animal = st.selectbox(
@@ -157,7 +148,6 @@ with st.form("formulario_cita"):
                 key=f"animal_select_{owner_id}"
             )
             animal_id = animal_options[selected_animal] if selected_animal else None
-            st.write("Debug - Animal ID seleccionado:", animal_id)
         else:
             st.warning("Este dueño no tiene mascotas registradas")
     else:
