@@ -7,43 +7,20 @@ from routers.routers_citas import router as appointments_router
 from routers.routers_animales import router as animals_router
 from routers.routers_tratamientos import router as tratamientos_router
 from routers.routers_productos import router as productos_router
+from database.engine import engine
+from database.data.models import Base
 
-# Modelo base para configuraciones de Pydantic
-class BaseModel(PydanticBaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+# Initialize database tables
+Base.metadata.create_all(bind=engine)
 
-# Modelo para un contrato
-class Contrato(BaseModel):
-    fecha: str
-    centro_seccion: str
-    nreg: str
-    nexp: str
-    objeto: str
-    tipo: str
-    procedimiento: str
-    numlicit: str
-    numinvitcurs: str
-    proc_adjud: str
-    presupuesto_con_iva: str
-    valor_estimado: str
-    importe_adj_con_iva: str
-    adjudicatario: str
-    fecha_formalizacion: str
-    I_G: str
-
-# Modelo para una lista de contratos
-class ListadoContratos(BaseModel):
-    contratos: List[Contrato]
-
-# Instancia principal de la aplicación FastAPI
+# Rest of your code remains the same...
 app = FastAPI(
     title="Gestión de Clínica Veterinaria",
     description="API para la gestión de datos de la clínica veterinaria y otras funcionalidades.",
     version="0.2.0"
 )
 
-# Incluir routers para las funcionalidades de la clínica
+# Include routers
 app.include_router(owners_router, prefix="/api/v1")
 app.include_router(appointments_router, prefix="/api/v1")
 app.include_router(animals_router, prefix="/api/v1")

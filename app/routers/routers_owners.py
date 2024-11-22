@@ -1,78 +1,92 @@
 # routers_owners.py
 
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Depends
+from sqlalchemy.orm import Session
+from database.data.models import Owner as OwnerModel
+from database.engine import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
 router = APIRouter()
 
-# Modelo de datos para representar a los dueños
 class Owner(BaseModel):
-    nombre: str              # Nombre del dueño
-    dni: str                 # DNI del dueño
-    direccion: str           # Dirección
-    telefono: str            # Teléfono
-    correo_electronico: EmailStr  # Correo electrónico, validado como email
+    nombre: str
+    dni: str
+    direccion: str
+    telefono: str
+    correo_electronico: EmailStr
 
-# Base de datos en memoria para almacenar dueños
-owners_db = []
+    class Config:
+        orm_mode = True
 
-# Crear un nuevo dueño
 @router.post("/owners", response_model=Owner, status_code=status.HTTP_201_CREATED)
-def create_owner(owner: Owner):
-    owners_db.append(owner.dict())
-    return owner
+def create_owner(owner: Owner, db: Session = Depends(get_db)):
+    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == owner.dni).first()
+    if db_owner:
+        raise HTTPException(status_code=400, detail="DNI ya registrado")
+    db_owner = OwnerModel(**owner.dict())
+    db.add(db_owner)
+    db.commit()
+    db.refresh(db_owner)
+    return db_owner
 
-# Obtener la lista de todos los dueños
 @router.get("/owners", response_model=List[Owner])
-def get_owners():
-    return owners_db
+def get_owners(db: Session = Depends(get_db)):
+    return db.query(OwnerModel).all()
 
-# Obtener un dueño por su DNI
 @router.get("/owners/{dni}", response_model=Owner)
-def get_owner(dni: str):
-    # Buscar el dueño por DNI
-    owner = next((owner for owner in owners_db if owner['dni'] == dni), None)
+def get_owner(dni: str, db: Session = Depends(get_db)):
+    owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
     if not owner:
         raise HTTPException(status_code=404, detail="Dueño no encontrado")
     return owner
 
-# Actualizar información de un dueño existente por DNI
 @router.put("/owners/{dni}", response_model=Owner)
-def update_owner(dni: str, owner_update: Owner):
-    index = next((i for i, owner in enumerate(owners_db) if owner['dni'] == dni), None)
-    if index is None:
+def update_owner(dni: str, owner_update: Owner, db: Session = Depends(get_db)):
+    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+    if not db_owner:
         raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    owners_db[index] = owner_update.dict()  # Actualizar el dueño en la posición encontrada
-    return owner_update
+    
+    for key, value in owner_update.dict().items():
+        setattr(db_owner, key, value)
+    
+    db.commit()
+    db.refresh(db_owner)
+    return db_owner
 
-# Eliminar un dueño por DNI
 @router.delete("/owners/{dni}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_owner(dni: str):
-    index = next((i for i, owner in enumerate(owners_db) if owner['dni'] == dni), None)
-    if index is None:
+def delete_owner(dni: str, db: Session = Depends(get_db)):
+    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+    if not db_owner:
         raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    owners_db.pop(index)  # Remover el dueño de la base de datos
+    
+    db.delete(db_owner)
+    db.commit()
     return {"message": "Dueño eliminado exitosamente"}
 
-# Buscar dueños por múltiples criterios
 @router.get("/owners/search", response_model=List[Owner])
 def search_owners(
+    db: Session = Depends(get_db),
     nombre: Optional[str] = Query(None),
     dni: Optional[str] = Query(None),
     direccion: Optional[str] = Query(None),
     telefono: Optional[str] = Query(None),
     correo_electronico: Optional[str] = Query(None)
 ):
-    # Filtrar la lista de dueños según los criterios de búsqueda
-    results = [
-        owner for owner in owners_db
-        if (nombre is None or owner['nombre'].lower() == nombre.lower()) and
-           (dni is None or owner['dni'] == dni) and
-           (direccion is None or owner['direccion'].lower() == direccion.lower()) and
-           (telefono is None or owner['telefono'] == telefono) and
-           (correo_electronico is None or owner['correo_electronico'].lower() == correo_electronico.lower())
-    ]
+    query = db.query(OwnerModel)
+    
+    if nombre:
+        query = query.filter(OwnerModel.nombre == nombre)
+    if dni:
+        query = query.filter(OwnerModel.dni == dni)
+    if direccion:
+        query = query.filter(OwnerModel.direccion == direccion)
+    if telefono:
+        query = query.filter(OwnerModel.telefono == telefono)
+    if correo_electronico:
+        query = query.filter(OwnerModel.correo_electronico == correo_electronico)
+    
+    results = query.all()
     if not results:
         raise HTTPException(status_code=404, detail="No se encontraron dueños con los criterios de búsqueda")
     return results
