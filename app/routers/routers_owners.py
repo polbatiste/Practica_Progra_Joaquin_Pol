@@ -10,6 +10,7 @@ from typing import List, Optional
 router = APIRouter()
 
 class Owner(BaseModel):
+    id: Optional[int]  # Añade esto
     nombre: str
     dni: str
     direccion: str
@@ -17,7 +18,7 @@ class Owner(BaseModel):
     correo_electronico: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Actualiza esto también
 
 @router.post("/owners", response_model=Owner, status_code=status.HTTP_201_CREATED)
 def create_owner(owner: Owner, db: Session = Depends(get_db)):
