@@ -1,4 +1,4 @@
-# streamli/pages/5_Animales.py
+# streanlit/pages/5_Animales.py
 
 import streamlit as st
 import requests
@@ -8,15 +8,18 @@ import pandas as pd
 API_URL_ANIMALS = "http://app:8000/api/v1/animals"
 API_URL_OWNERS = "http://app:8000/api/v1/owners"
 
-# Título de la página
 st.title("Alta de Animales - Clínica Veterinaria")
 
-# Función para obtener dueños
 def get_owners():
-    response = requests.get(API_URL_OWNERS)
-    if response.status_code == 200:
-        return response.json()
-    return []
+    try:
+        response = requests.get(API_URL_OWNERS)
+        response.raise_for_status()
+        owners = response.json()
+        st.write(f"Debug - Total dueños cargados: {len(owners)}")
+        return owners
+    except:
+        st.error("No se pudo obtener la lista de dueños")
+        return []
 
 def create_animal(name, species, breed, age, owner_id):
     data = {
@@ -26,20 +29,28 @@ def create_animal(name, species, breed, age, owner_id):
         "age": age,
         "owner_id": owner_id
     }
-    response = requests.post(API_URL_ANIMALS, json=data)
-    if response.status_code == 201:
-        st.success("Animal registrado exitosamente")
-        st.experimental_rerun()
-    else:
-        st.error("Error al registrar el animal")
+    try:
+        response = requests.post(API_URL_ANIMALS, json=data)
+        if response.status_code == 201:
+            st.success("Animal registrado exitosamente")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+        else:
+            st.error(f"Error al registrar el animal: {response.text}")
+    except:
+        st.error("No se pudo conectar con el servidor")
 
 def get_animals():
-    response = requests.get(API_URL_ANIMALS)
-    if response.status_code == 200:
-        return response.json()
-    return []
+    try:
+        response = requests.get(API_URL_ANIMALS)
+        response.raise_for_status()
+        animals = response.json()
+        st.write(f"Debug - Total animales cargados: {len(animals)}")
+        return animals
+    except:
+        st.error("No se pudo obtener la lista de animales")
+        return []
 
-# Obtener lista de dueños
+# Obtener datos
 owners = get_owners()
 owners_dict = {f"{owner['nombre']} (DNI: {owner['dni']})": owner['id'] for owner in owners}
 
@@ -48,7 +59,7 @@ st.subheader("Registrar un Nuevo Animal")
 
 # Opción para ir a registrar un nuevo dueño
 if st.button("Registrar Nuevo Dueño"):
-    st.switch_page("pages/4_Dueños.py")
+    st.write('<meta http-equiv="refresh" content="0;url=/pages/4_Dueños.py">', unsafe_allow_html=True)
 
 with st.form("animal_form"):
     name = st.text_input("Nombre del Animal")
@@ -64,20 +75,24 @@ with st.form("animal_form"):
             placeholder="Seleccione un dueño..."
         )
         owner_id = owners_dict[owner_selection] if owner_selection else None
+        
+        if owner_id:
+            st.write("Debug - Owner ID seleccionado:", owner_id)
     else:
         st.warning("No hay dueños registrados. Por favor, registre un dueño primero.")
         owner_id = None
 
     submit_disabled = not owners
     if st.form_submit_button("Registrar", disabled=submit_disabled):
-        if owner_id is not None:
+        if all([name, species, breed, age, owner_id]):
             create_animal(name, species, breed, age, owner_id)
+        else:
+            st.error("Por favor complete todos los campos")
 
 # Mostrar todos los animales registrados
 st.subheader("Animales Registrados")
 animals = get_animals()
 if animals:
-    # Enriquecer datos con información del dueño
     enriched_animals = []
     for animal in animals:
         owner = next((o for o in owners if o['id'] == animal['owner_id']), None)

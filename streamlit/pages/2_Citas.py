@@ -1,4 +1,4 @@
-# streamli/pages/2_Citas.py
+# streanlit/pages/2_Citas.py
 
 import streamlit as st
 import requests
@@ -15,7 +15,9 @@ def obtener_dueños():
     try:
         respuesta = requests.get(url_owners)
         respuesta.raise_for_status()
-        return respuesta.json()
+        dueños = respuesta.json()
+        st.write(f"Debug - Total dueños cargados: {len(dueños)}")
+        return dueños
     except:
         st.error("No se pudo obtener la lista de dueños")
         return []
@@ -24,7 +26,9 @@ def obtener_animales():
     try:
         respuesta = requests.get(url_animals)
         respuesta.raise_for_status()
-        return respuesta.json()
+        animales = respuesta.json()
+        st.write(f"Debug - Total animales cargados: {len(animales)}")
+        return animales
     except:
         st.error("No se pudo obtener la lista de animales")
         return []
@@ -138,17 +142,25 @@ with st.form("formulario_cita"):
     owner_id = dueño_options[selected_dueño] if selected_dueño else None
     
     # Selector de animal filtrado por dueño
+    animal_id = None
     if owner_id:
+        st.write("Debug - Owner ID:", owner_id)
         animales_dueño = [a for a in animales if a['owner_id'] == owner_id]
+        st.write("Debug - Animales encontrados:", len(animales_dueño))
+        st.write("Debug - IDs de animales encontrados:", [a['id'] for a in animales_dueño])
+        
         if animales_dueño:
             animal_options = {a['name']: a['id'] for a in animales_dueño}
-            selected_animal = st.selectbox("Seleccionar Mascota", options=list(animal_options.keys()))
+            selected_animal = st.selectbox(
+                "Seleccionar Mascota", 
+                options=list(animal_options.keys()),
+                key=f"animal_select_{owner_id}"
+            )
             animal_id = animal_options[selected_animal] if selected_animal else None
+            st.write("Debug - Animal ID seleccionado:", animal_id)
         else:
             st.warning("Este dueño no tiene mascotas registradas")
-            animal_id = None
     else:
-        animal_id = None
         st.warning("Seleccione un dueño primero")
 
     fecha = st.date_input("Fecha")
