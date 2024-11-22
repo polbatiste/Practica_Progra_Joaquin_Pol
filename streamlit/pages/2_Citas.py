@@ -128,13 +128,23 @@ else:
 
 # Formulario de citas
 st.subheader("Programar o Modificar Cita")
+
+# Control de estado para el dueño seleccionado
+if 'previous_owner' not in st.session_state:
+    st.session_state.previous_owner = None
+
+# Selector de dueño fuera del formulario
+dueño_options = {f"{d['nombre']} (DNI: {d['dni']})": d['id'] for d in dueños}
+selected_dueño = st.selectbox("Seleccionar Dueño", options=list(dueño_options.keys()))
+owner_id = dueño_options[selected_dueño] if selected_dueño else None
+
+# Forzar recarga si cambia el dueño
+if owner_id != st.session_state.previous_owner:
+    st.session_state.previous_owner = owner_id
+    st.rerun()
+
 with st.form("formulario_cita"):
     id_cita = st.text_input("ID de la Cita (solo para modificar)")
-    
-    # Selector de dueño
-    dueño_options = {f"{d['nombre']} (DNI: {d['dni']})": d['id'] for d in dueños}
-    selected_dueño = st.selectbox("Seleccionar Dueño", options=list(dueño_options.keys()))
-    owner_id = dueño_options[selected_dueño] if selected_dueño else None
     
     # Selector de animal filtrado por dueño
     animal_id = None

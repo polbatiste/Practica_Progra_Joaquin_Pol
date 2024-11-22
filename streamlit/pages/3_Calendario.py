@@ -89,6 +89,10 @@ dueños = obtener_dueños()
 animales = obtener_animales()
 tratamientos = obtener_tratamientos()
 
+# Control de estado para el dueño seleccionado
+if 'previous_owner' not in st.session_state:
+    st.session_state.previous_owner = None
+
 # Colores para consultas
 consulta_colores = {
     "1": "#FF6C6C",
@@ -143,10 +147,15 @@ for consulta, color in consulta_colores.items():
 def popup():
     st.write(f'Fecha: {st.session_state["time_inicial"]}')
     with st.form("formulario_cita"):
-        # Selector de dueño
+        # Selector de dueño fuera del formulario
         dueño_options = {f"{d['nombre']} (DNI: {d['dni']})": d['id'] for d in dueños}
-        selected_dueño = st.selectbox("Dueño", options=list(dueño_options.keys()), key="dueno_select")
+        selected_dueño = st.selectbox("Dueño", options=list(dueño_options.keys()))
         owner_id = dueño_options[selected_dueño] if selected_dueño else None
+
+        # Forzar recarga si cambia el dueño
+        if owner_id != st.session_state.previous_owner:
+            st.session_state.previous_owner = owner_id
+            st.rerun()
 
         # Selector de animal filtrado
         animal_id = None
