@@ -10,7 +10,7 @@ from typing import List, Optional
 router = APIRouter()
 
 class Owner(BaseModel):
-    id: Optional[int]  # Añade esto
+    id: Optional[int] = None  # Añade =None
     nombre: str
     dni: str
     direccion: str
