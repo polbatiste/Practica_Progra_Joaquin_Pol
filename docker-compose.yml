@@ -28,6 +28,8 @@ services:
     networks:
       - deploy_network
     container_name: streamlit
+    environment:
+      - API_URL=http://app:8000
 
   mongodb:
     image: mongo:latest

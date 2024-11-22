@@ -4,11 +4,11 @@ import pandas as pd
 from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel as PydanticBaseModel
-from routers.routers_owners import router as owners_router
-from routers.routers_citas import router as appointments_router
-from routers.routers_animales import router as animals_router
-from routers.routers_tratamientos import router as tratamientos_router
-from routers.routers_productos import router as productos_router
+from .routers.routers_owners import router as owners_router
+from .routers.routers_citas import router as appointments_router
+from .routers.routers_animales import router as animals_router
+from .routers.routers_tratamientos import router as tratamientos_router
+from .routers.routers_productos import router as productos_router
 from database.engine import engine
 from database.data.models import Base
 
