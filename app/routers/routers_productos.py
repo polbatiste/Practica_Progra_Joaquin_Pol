@@ -1,3 +1,5 @@
+# app/routers/routers_productos.py
+
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from typing import List, Optional

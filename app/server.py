@@ -1,5 +1,4 @@
-# server.py
-
+# app/server.py
 
 import pandas as pd
 from typing import List
@@ -13,7 +12,7 @@ from routers.routers_productos import router as productos_router
 from database.engine import engine
 from database.data.models import Base
 
-# Initialize database tables
+# Initialize database
 Base.metadata.create_all(bind=engine)
 
 # Rest of your code remains the same...

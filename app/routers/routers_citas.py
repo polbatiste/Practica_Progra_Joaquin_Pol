@@ -1,4 +1,4 @@
-# routers_citas.py
+# app/routers/routers_citas.py
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session

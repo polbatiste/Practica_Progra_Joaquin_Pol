@@ -1,4 +1,5 @@
-# database/models.py
+# database/data/models.py
+
 from sqlalchemy import Column, ForeignKey, Integer, String, Date, Time
 from sqlalchemy.orm import relationship
 from database.engine import Base

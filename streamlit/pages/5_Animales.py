@@ -1,4 +1,4 @@
-# 5_Animales.py
+# streamli/pages/5_Animales.py
 
 import streamlit as st
 import requests

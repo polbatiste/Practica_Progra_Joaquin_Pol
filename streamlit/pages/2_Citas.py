@@ -1,4 +1,4 @@
-# 2_Citas.py
+# streamli/pages/2_Citas.py
 
 import streamlit as st
 import requests

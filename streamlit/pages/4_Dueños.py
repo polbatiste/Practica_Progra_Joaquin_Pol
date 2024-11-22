@@ -1,4 +1,4 @@
-# 4_Dueños.py
+# streamli/pages/4_Dueños.py
 
 import streamlit as st
 import requests

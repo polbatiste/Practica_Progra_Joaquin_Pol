@@ -1,4 +1,4 @@
-# routers_animales.py
+# app/routers/routers_animales.py
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
