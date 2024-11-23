@@ -1,7 +1,9 @@
+# docker-compose.ymlS
+
 services:
   app:
     build:
-      context: ./app  # Ruta del Dockerfile para la aplicación FastAPI
+      context: ./app
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -10,12 +12,14 @@ services:
     container_name: app
     depends_on:
       - mongodb
+      - postgres
     environment:
-      - MONGO_URI=mongodb://root:example@mongodb:27017/clinica_veterinaria?authSource=admin  # URI de conexión a MongoDB
+      - MONGO_URI=mongodb://root:example@mongodb:27017/clinica_veterinaria?authSource=admin
+      - DATABASE_URL=postgresql://postgres:example@postgres:5432/clinica_veterinaria
 
   streamlit:
     build:
-      context: ./streamlit  # Ruta del Dockerfile para la aplicación Streamlit
+      context: ./streamlit
       dockerfile: Dockerfile
     depends_on:
       - app
@@ -24,6 +28,8 @@ services:
     networks:
       - deploy_network
     container_name: streamlit
+    environment:
+      - API_URL=http://app:8000
 
   mongodb:
     image: mongo:latest
@@ -35,8 +41,25 @@ services:
     networks:
       - deploy_network
     container_name: mongodb
-    command: mongod --quiet --auth  # Reducir los logs y habilitar autenticación
+    command: mongod --quiet --auth
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_DB=clinica_veterinaria
+    ports:
+      - "5432:5432"
+    networks:
+      - deploy_network
+    container_name: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 networks:
   deploy_network:
     driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,14 +1,26 @@
+# streanlit/pages/5_Animales.py
+
 import streamlit as st
 import requests
 import pandas as pd
 
-# Configuración del endpoint de la API
-API_URL = "http://app:8000/api/v1/animals"
+# URLs de la API
+API_URL_ANIMALS = "http://app:8000/api/v1/animals"
+API_URL_OWNERS = "http://app:8000/api/v1/owners"
 
-# Título de la página
 st.title("Alta de Animales - Clínica Veterinaria")
 
-# Función para registrar un nuevo animal
+def get_owners():
+    try:
+        response = requests.get(API_URL_OWNERS)
+        response.raise_for_status()
+        owners = response.json()
+        st.write(f"Debug - Total dueños cargados: {len(owners)}")
+        return owners
+    except:
+        st.error("No se pudo obtener la lista de dueños")
+        return []
+
 def create_animal(name, species, breed, age, owner_id):
     data = {
         "name": name,
@@ -17,40 +29,83 @@ def create_animal(name, species, breed, age, owner_id):
         "age": age,
         "owner_id": owner_id
     }
-    response = requests.post(API_URL, json=data)
-    if response.status_code == 201:
-        st.success("Animal registrado exitosamente")
-        # Recargar la página usando HTML
-        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
-    else:
-        st.error("Error al registrar el animal")
+    try:
+        response = requests.post(API_URL_ANIMALS, json=data)
+        if response.status_code == 201:
+            st.success("Animal registrado exitosamente")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+        else:
+            st.error(f"Error al registrar el animal: {response.text}")
+    except:
+        st.error("No se pudo conectar con el servidor")
 
-# Función para obtener todos los animales
 def get_animals():
-    response = requests.get(API_URL)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error("Error al cargar los animales")
+    try:
+        response = requests.get(API_URL_ANIMALS)
+        response.raise_for_status()
+        animals = response.json()
+        st.write(f"Debug - Total animales cargados: {len(animals)}")
+        return animals
+    except:
+        st.error("No se pudo obtener la lista de animales")
         return []
+
+# Obtener datos
+owners = get_owners()
+owners_dict = {f"{owner['nombre']} (DNI: {owner['dni']})": owner['id'] for owner in owners}
 
 # Formulario para registrar un nuevo animal
 st.subheader("Registrar un Nuevo Animal")
+
+# Opción para ir a registrar un nuevo dueño
+if st.button("Registrar Nuevo Dueño"):
+    st.write('<meta http-equiv="refresh" content="0;url=/pages/4_Dueños.py">', unsafe_allow_html=True)
+
 with st.form("animal_form"):
     name = st.text_input("Nombre del Animal")
     species = st.text_input("Especie")
     breed = st.text_input("Raza")
     age = st.number_input("Edad", min_value=0, step=1)
-    owner_id = st.number_input("ID del Dueño", min_value=0, step=1)
+    
+    if owners:
+        owner_selection = st.selectbox(
+            "Seleccionar Dueño",
+            options=list(owners_dict.keys()),
+            index=None,
+            placeholder="Seleccione un dueño..."
+        )
+        owner_id = owners_dict[owner_selection] if owner_selection else None
+        
+        if owner_id:
+            st.write("Debug - Owner ID seleccionado:", owner_id)
+    else:
+        st.warning("No hay dueños registrados. Por favor, registre un dueño primero.")
+        owner_id = None
 
-    if st.form_submit_button("Registrar"):
-        create_animal(name, species, breed, age, owner_id)
+    submit_disabled = not owners
+    if st.form_submit_button("Registrar", disabled=submit_disabled):
+        if all([name, species, breed, age, owner_id]):
+            create_animal(name, species, breed, age, owner_id)
+        else:
+            st.error("Por favor complete todos los campos")
 
-# Mostrar todos los animales registrados en una tabla
+# Mostrar todos los animales registrados
 st.subheader("Animales Registrados")
 animals = get_animals()
 if animals:
-    df_animals = pd.DataFrame(animals)
+    enriched_animals = []
+    for animal in animals:
+        owner = next((o for o in owners if o['id'] == animal['owner_id']), None)
+        enriched_animals.append({
+            'ID': animal['id'],
+            'Nombre': animal['name'],
+            'Especie': animal['species'],
+            'Raza': animal['breed'],
+            'Edad': animal['age'],
+            'Dueño': owner['nombre'] if owner else 'Desconocido'
+        })
+    
+    df_animals = pd.DataFrame(enriched_animals)
     st.table(df_animals)
 else:
     st.info("No hay animales registrados.")
