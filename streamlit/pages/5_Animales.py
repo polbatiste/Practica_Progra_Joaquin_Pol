@@ -15,7 +15,6 @@ def get_owners():
         response = requests.get(API_URL_OWNERS)
         response.raise_for_status()
         owners = response.json()
-        st.write(f"Debug - Total dueños cargados: {len(owners)}")
         return owners
     except:
         st.error("No se pudo obtener la lista de dueños")
@@ -44,7 +43,6 @@ def get_animals():
         response = requests.get(API_URL_ANIMALS)
         response.raise_for_status()
         animals = response.json()
-        st.write(f"Debug - Total animales cargados: {len(animals)}")
         return animals
     except:
         st.error("No se pudo obtener la lista de animales")
@@ -75,9 +73,6 @@ with st.form("animal_form"):
             placeholder="Seleccione un dueño..."
         )
         owner_id = owners_dict[owner_selection] if owner_selection else None
-        
-        if owner_id:
-            st.write("Debug - Owner ID seleccionado:", owner_id)
     else:
         st.warning("No hay dueños registrados. Por favor, registre un dueño primero.")
         owner_id = None
