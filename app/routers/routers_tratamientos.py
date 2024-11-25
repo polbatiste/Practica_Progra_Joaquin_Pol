@@ -23,12 +23,34 @@ class Tratamiento(BaseModel):
 # Función para poblar la colección con tratamientos iniciales, solo si está vacía
 def poblar_tratamientos_iniciales():
     tratamientos_iniciales = [
+        # Tratamientos básicos
         {"tipo": "Tratamientos básicos", "nombre": "Análisis de sangre", "descripcion": "Análisis de sangre completo", "precio": 50.0},
+        {"tipo": "Tratamientos básicos", "nombre": "Análisis hormonales", "descripcion": "Detección de niveles hormonales", "precio": 70.0},
         {"tipo": "Tratamientos básicos", "nombre": "Vacunación", "descripcion": "Vacunas generales", "precio": 30.0},
+        {"tipo": "Tratamientos básicos", "nombre": "Desparasitación", "descripcion": "Eliminación de parásitos internos y externos", "precio": 25.0},
+        
+        # Revisión general
         {"tipo": "Revisión general", "nombre": "Revisión general", "descripcion": "Revisión completa del animal", "precio": 60.0},
+
+        # Revisión específica
+        {"tipo": "Revisión específica", "nombre": "Revisión cardiológica", "descripcion": "Examen especializado del corazón", "precio": 120.0},
+        {"tipo": "Revisión específica", "nombre": "Revisión cutánea", "descripcion": "Evaluación de la piel y pelaje", "precio": 80.0},
+        {"tipo": "Revisión específica", "nombre": "Revisión broncológica", "descripcion": "Revisión de vías respiratorias", "precio": 90.0},
+
+        # Ecografías
+        {"tipo": "Ecografías", "nombre": "Ecografía abdominal", "descripcion": "Ecografía de la cavidad abdominal", "precio": 150.0},
+        {"tipo": "Ecografías", "nombre": "Ecografía cardíaca", "descripcion": "Ecografía para evaluar el corazón", "precio": 180.0},
+
+        # Tratamientos dentales
+        {"tipo": "Tratamientos dentales", "nombre": "Limpieza bucal", "descripcion": "Limpieza profunda de dientes", "precio": 100.0},
+        {"tipo": "Tratamientos dentales", "nombre": "Extracción de piezas dentales", "descripcion": "Extracción quirúrgica de dientes dañados", "precio": 200.0},
+
+        # Cirugías
         {"tipo": "Cirugía", "nombre": "Castración", "descripcion": "Castración quirúrgica", "precio": 150.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía abdominal", "descripcion": "Procedimientos quirúrgicos abdominales", "precio": 300.0},
         {"tipo": "Cirugía", "nombre": "Cirugía cardíaca", "descripcion": "Cirugía en el corazón", "precio": 500.0},
-        # Otros tratamientos...
+        {"tipo": "Cirugía", "nombre": "Cirugía articular y ósea", "descripcion": "Reparación de articulaciones y huesos", "precio": 400.0},
+        {"tipo": "Cirugía", "nombre": "Cirugía de hernias", "descripcion": "Reparación de hernias", "precio": 250.0}
     ]
     if coleccion_tratamientos.count_documents({}) == 0:
         coleccion_tratamientos.insert_many(tratamientos_iniciales)
