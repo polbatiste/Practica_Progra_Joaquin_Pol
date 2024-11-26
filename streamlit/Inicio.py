@@ -8,7 +8,7 @@ st.image('logo.jpg')  # Mostrar el logo de la clínica
 # Mensaje de carga con un temporizador
 placeholder = st.empty()
 with placeholder:
-    for seconds in range(10):
+    for seconds in range(5):
         placeholder.write(f"⏳ {seconds} Cargando sistema de gestión veterinaria")
         time.sleep(1)
 placeholder.empty()

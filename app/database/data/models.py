@@ -1,6 +1,4 @@
-# database/data/models.py
-
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, Time
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from database.engine import Base
 
@@ -34,8 +32,8 @@ class Appointment(Base):
     __tablename__ = 'appointments'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, nullable=False)
-    time = Column(Time, nullable=False)
+    date = Column(String(10), nullable=False)  # Cambiado a String para simplificar
+    time = Column(String(5), nullable=False)   # Cambiado a String para simplificar
     treatment = Column(String(200), nullable=False)
     reason = Column(String(500))
     consultation = Column(String(50), nullable=False)
