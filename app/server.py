@@ -29,4 +29,4 @@ app.include_router(productos_router, prefix="/api/v1")
 # Mensaje de bienvenida
 @app.get("/")
 def read_root():
-    return
+    return {"message": "Bienvenido a la API de la clínica veterinaria"}

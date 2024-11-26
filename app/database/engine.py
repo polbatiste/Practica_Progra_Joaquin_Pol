@@ -4,7 +4,6 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from database.data.models import Owner, Animal  # Asegúrate de importar los modelos adecuados
 
 # Configuración de la base de datos
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:example@postgres:5432/clinica_veterinaria"
@@ -27,15 +26,16 @@ def get_db():
 
 def create_tables():
     """Crea las tablas en la base de datos."""
+    from database.data.models import Base  # Importación local para evitar circularidad
     Base.metadata.create_all(bind=engine)
 
 def seed_initial_data():
     """Inicializa datos con dueños y mascotas predeterminados."""
+    from database.data.models import Owner, Animal  # Importación local
     db = SessionLocal()
     try:
         # Comprobar si ya hay datos iniciales
         if not db.query(Owner).first():
-            # Crear los dueños y sus mascotas
             owner1 = Owner(
                 nombre="Jaime Oriol",
                 dni="12345678A",
@@ -59,10 +59,8 @@ def seed_initial_data():
                 ]
             )
 
-            # Agregar datos a la sesión
             db.add_all([owner1, owner2])
             db.commit()
-
             print("Datos iniciales creados con éxito.")
         else:
             print("Los datos iniciales ya existen.")
