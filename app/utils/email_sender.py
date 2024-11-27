@@ -12,8 +12,8 @@ def send_email_with_attachment(recipient_email, subject, body, attachment_path):
     # Credenciales de correo
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
-    sender_email = "joriolgo@gmail.com"
-    sender_password = "uaty uegu jndh fjjj"
+    sender_email = "veterinaria.mentema@gmail.com"
+    sender_password = "dlul iqfz otxw rbuw"
 
     # Crear mensaje
     msg = MIMEMultipart()
