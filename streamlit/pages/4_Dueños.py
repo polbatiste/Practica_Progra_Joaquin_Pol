@@ -44,6 +44,24 @@ def request_owner_deletion(dni, email, reason):
     response = requests.post(f"{API_URL}/delete-request", json=data)
     return response
 
+def check_deletion_confirmation(dni: str):
+    try:
+        response = requests.get(f"{API_URL}/confirm-deletion/{dni}")
+        if response.status_code == 200:
+            st.success("✅ Sus datos han sido eliminados exitosamente")
+            st.balloons()
+            time.sleep(2)
+            # Recargar la página principal
+            st.write('<meta http-equiv="refresh" content="2;url=/">', unsafe_allow_html=True)
+            return True
+        else:
+            error_msg = response.json().get('detail', 'Error desconocido')
+            st.error(f"❌ Error al procesar la eliminación: {error_msg}")
+            return False
+    except Exception as e:
+        st.error(f"❌ Error en la solicitud: {str(e)}")
+        return False
+
 if 'from_animals' not in st.session_state:
     st.session_state['from_animals'] = False
 
@@ -97,27 +115,36 @@ if 'confirm-deletion' in params:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✔️ Confirmar eliminación"):
-            try:
-                response = requests.get(f"{API_URL}/confirm-deletion/{dni}")
-                if response.status_code == 200:
-                    st.success("✅ Sus datos han sido eliminados exitosamente")
-                    st.balloons()  # Efecto visual
-                    time.sleep(3)
-                    st.rerun()
-                else:
-                    st.error(f"❌ Error al procesar la eliminación: {response.json().get('detail', 'Error desconocido')}")
-            except Exception as e:
-                st.error(f"❌ Error en la solicitud: {str(e)}")
+            if check_deletion_confirmation(dni):
+                st.session_state['deletion_confirmed'] = True
     with col2:
         if st.button("❌ Cancelar"):
             st.write('<meta http-equiv="refresh" content="0;url=/">', unsafe_allow_html=True)
+
+# Mostrar estado de la eliminación si está en progreso
+if st.session_state.get('deletion_confirmed'):
+    st.info("🔄 Procesando la eliminación...")
+    time.sleep(1)
+    st.experimental_rerun()
 
 # Sección de Listado
 st.subheader("📋 Dueños Registrados")
 owners = get_owners()
 if owners:
     df_owners = pd.DataFrame(owners)
-    st.dataframe(df_owners, use_container_width=True)
+    st.dataframe(
+        df_owners,
+        column_config={
+            "id": st.column_config.Column("ID", width="small"),
+            "nombre": st.column_config.Column("Nombre", width="medium"),
+            "dni": st.column_config.Column("DNI", width="medium"),
+            "direccion": st.column_config.Column("Dirección", width="large"),
+            "telefono": st.column_config.Column("Teléfono", width="medium"),
+            "correo_electronico": st.column_config.Column("Email", width="large")
+        },
+        use_container_width=True,
+        hide_index=True
+    )
 else:
     st.info("ℹ️ No hay dueños registrados")
 
@@ -134,6 +161,18 @@ if search_name or search_dni:
     ]
     if filtered_owners:
         st.write("📊 Resultados de la búsqueda:")
-        st.dataframe(pd.DataFrame(filtered_owners), use_container_width=True)
+        st.dataframe(
+            pd.DataFrame(filtered_owners),
+            column_config={
+                "id": st.column_config.Column("ID", width="small"),
+                "nombre": st.column_config.Column("Nombre", width="medium"),
+                "dni": st.column_config.Column("DNI", width="medium"),
+                "direccion": st.column_config.Column("Dirección", width="large"),
+                "telefono": st.column_config.Column("Teléfono", width="medium"),
+                "correo_electronico": st.column_config.Column("Email", width="large")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
     else:
         st.info("ℹ️ No se encontraron dueños que coincidan con los criterios de búsqueda.")
