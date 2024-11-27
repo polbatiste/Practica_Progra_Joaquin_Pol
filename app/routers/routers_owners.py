@@ -1,16 +1,15 @@
-# app/routers/routers_owners.py
-
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, HTTPException, status, Query, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from database.data.models import Owner as OwnerModel
+from database.data.models import Owner as OwnerModel, Animal as AnimalModel
 from database.engine import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from utils.email_sender import send_email_with_attachment
 
 router = APIRouter()
 
 class Owner(BaseModel):
-    id: Optional[int] = None  # Añade =None
+    id: Optional[int] = None
     nombre: str
     dni: str
     direccion: str
@@ -18,7 +17,29 @@ class Owner(BaseModel):
     correo_electronico: EmailStr
 
     class Config:
-        from_attributes = True  # Actualiza esto también
+        from_attributes = True
+
+class DeleteRequest(BaseModel):
+    dni: str
+    email: EmailStr
+    reason: Optional[str] = None
+
+async def delete_owner_and_pets(dni: str, db: Session):
+    try:
+        db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+        if not db_owner:
+            raise HTTPException(status_code=404, detail="Dueño no encontrado")
+        
+        # Eliminar mascotas asociadas
+        db.query(AnimalModel).filter(AnimalModel.owner_id == db_owner.id).delete()
+        
+        # Eliminar dueño
+        db.delete(db_owner)
+        db.commit()
+        return db_owner
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al eliminar: {str(e)}")
 
 @router.post("/owners", response_model=Owner, status_code=status.HTTP_201_CREATED)
 def create_owner(owner: Owner, db: Session = Depends(get_db)):
@@ -34,36 +55,6 @@ def create_owner(owner: Owner, db: Session = Depends(get_db)):
 @router.get("/owners", response_model=List[Owner])
 def get_owners(db: Session = Depends(get_db)):
     return db.query(OwnerModel).all()
-
-@router.get("/owners/{dni}", response_model=Owner)
-def get_owner(dni: str, db: Session = Depends(get_db)):
-    owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
-    if not owner:
-        raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    return owner
-
-@router.put("/owners/{dni}", response_model=Owner)
-def update_owner(dni: str, owner_update: Owner, db: Session = Depends(get_db)):
-    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
-    if not db_owner:
-        raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    
-    for key, value in owner_update.dict().items():
-        setattr(db_owner, key, value)
-    
-    db.commit()
-    db.refresh(db_owner)
-    return db_owner
-
-@router.delete("/owners/{dni}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_owner(dni: str, db: Session = Depends(get_db)):
-    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
-    if not db_owner:
-        raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    
-    db.delete(db_owner)
-    db.commit()
-    return {"message": "Dueño eliminado exitosamente"}
 
 @router.get("/owners/search", response_model=List[Owner])
 def search_owners(
@@ -91,3 +82,61 @@ def search_owners(
     if not results:
         raise HTTPException(status_code=404, detail="No se encontraron dueños con los criterios de búsqueda")
     return results
+
+@router.get("/owners/{dni}", response_model=Owner)
+def get_owner(dni: str, db: Session = Depends(get_db)):
+    owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Dueño no encontrado")
+    return owner
+
+@router.put("/owners/{dni}", response_model=Owner)
+def update_owner(dni: str, owner_update: Owner, db: Session = Depends(get_db)):
+    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+    if not db_owner:
+        raise HTTPException(status_code=404, detail="Dueño no encontrado")
+    
+    for key, value in owner_update.dict().items():
+        setattr(db_owner, key, value)
+    
+    db.commit()
+    db.refresh(db_owner)
+    return db_owner
+
+@router.post("/owners/delete", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_owner(
+    delete_request: DeleteRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    try:
+        # Eliminar dueño y mascotas
+        deleted_owner = await delete_owner_and_pets(delete_request.dni, db)
+
+        # Enviar correo de confirmación
+        subject = "Confirmación de eliminación de datos - Clínica Veterinaria"
+        body = f"""
+        Estimado/a {deleted_owner.nombre},
+
+        Sus datos y los de sus mascotas asociadas han sido eliminados de nuestro sistema.
+
+        Razón proporcionada para la eliminación: {delete_request.reason if delete_request.reason else 'No especificada'}
+
+        Atentamente,
+        Clínica Veterinaria
+        """
+        email_sent = send_email_with_attachment(
+            recipient_email=delete_request.email,
+            subject=subject,
+            body=body,
+            attachment_path=None
+        )
+
+        if not email_sent:
+            raise HTTPException(status_code=500, detail="Error al enviar el correo de confirmación")
+        
+        return {"message": "Dueño y mascotas eliminados exitosamente"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

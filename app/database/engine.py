@@ -40,10 +40,10 @@ def seed_initial_data():
         if not db.query(Owner).first():
             owner1 = Owner(
                 nombre="Jaime Oriol",
-                dni="12345678A",
+                dni="54023033N",
                 direccion="Calle Falsa 123",
                 telefono="555-1234",
-                correo_electronico="jaime.oriol@example.com",
+                correo_electronico="joriolgo@gmail.com",
                 animals=[
                     Animal(name="Jorge Grube", species="Perro", breed="Golden Retriever", age=5),
                     Animal(name="Mbappe", species="Gato", breed="Siamés", age=3)
