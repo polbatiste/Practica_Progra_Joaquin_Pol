@@ -18,6 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    """Devuelve una sesión de la base de datos."""
     db = SessionLocal()
     try:
         yield db
@@ -25,12 +26,13 @@ def get_db():
         db.close()
 
 def create_tables():
-    """Crea las tablas en la base de datos."""
+    """Crea todas las tablas en la base de datos a partir de los modelos."""
     from database.data.models import Base  # Importación local para evitar circularidad
     Base.metadata.create_all(bind=engine)
+    print("Tablas creadas con éxito.")
 
 def seed_initial_data():
-    """Inicializa datos con dueños y mascotas predeterminados."""
+    """Inicializa datos con dueños, mascotas y tratamientos predeterminados."""
     from database.data.models import Owner, Animal  # Importación local
     db = SessionLocal()
     try:
@@ -69,3 +71,8 @@ def seed_initial_data():
         print(f"Error al insertar datos iniciales: {e}")
     finally:
         db.close()
+
+if __name__ == "__main__":
+    # Crea las tablas y llena los datos iniciales si ejecutas este archivo directamente
+    create_tables()
+    seed_initial_data()
