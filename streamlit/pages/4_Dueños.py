@@ -107,16 +107,29 @@ with st.form("delete_form"):
                 st.error(f"❌ Error al procesar la solicitud: {response.json().get('detail', 'Error desconocido')}")
 
 # Sección de Confirmación de Eliminación
+# En la sección de confirmación de eliminación:
+
 params = st.query_params
-if 'confirm-deletion' in params:
-    dni = params['confirm-deletion']
+if 'delete' in params:
+    dni = params['delete']
+    
     st.warning("⚠️ ¿Está seguro que desea eliminar permanentemente sus datos y los de sus mascotas asociadas?")
     
     col1, col2 = st.columns(2)
     with col1:
         if st.button("✔️ Confirmar eliminación"):
-            if check_deletion_confirmation(dni):
-                st.session_state['deletion_confirmed'] = True
+            try:
+                response = requests.delete(f"{API_URL}/{dni}")
+                if response.status_code in [200, 204]:
+                    st.success("✅ Sus datos han sido eliminados exitosamente")
+                    st.balloons()
+                    time.sleep(2)
+                    st.rerun()
+                else:
+                    st.error("❌ Error al eliminar los datos")
+            except Exception as e:
+                st.error(f"❌ Error: {str(e)}")
+    
     with col2:
         if st.button("❌ Cancelar"):
             st.write('<meta http-equiv="refresh" content="0;url=/">', unsafe_allow_html=True)

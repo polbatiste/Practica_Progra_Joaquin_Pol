@@ -135,7 +135,7 @@ async def request_deletion(
     Hemos recibido su solicitud de eliminación de datos de nuestro sistema.
     Para confirmar la eliminación de sus datos y los de sus mascotas asociadas, por favor haga clic en el siguiente enlace:
     
-    http://app:8000/api/v1/owners/confirm-deletion/{db_owner.dni}
+    http://localhost:8501/?delete={db_owner.dni}
     
     Si no ha solicitado esta eliminación, por favor ignore este correo.
 
@@ -145,40 +145,25 @@ async def request_deletion(
     Clínica Veterinaria
     """
     
-    try:
-        # Enviar correo
-        email_sent = send_email_with_attachment(
-            recipient_email=delete_request.email,
-            subject=subject,
-            body=body,
-            attachment_path=None
-        )
-        
-        if not email_sent:
-            raise HTTPException(
-                status_code=500,
-                detail="Error al enviar el correo de confirmación"
-            )
-        
-        return {"message": "Solicitud de eliminación recibida. Se ha enviado un correo de confirmación."}
-    except Exception as e:
+    email_sent = send_email_with_attachment(
+        recipient_email=delete_request.email,
+        subject=subject,
+        body=body,
+        attachment_path=None
+    )
+    
+    if not email_sent:
         raise HTTPException(
             status_code=500,
-            detail=f"Error al procesar la solicitud: {str(e)}"
+            detail="Error al enviar el correo de confirmación"
         )
+    
+    return {"message": "Solicitud de eliminación recibida. Se ha enviado un correo de confirmación."}
 
-@router.get("/confirm-deletion/{dni}")
-async def confirm_deletion(dni: str, db: Session = Depends(get_db)):
+# Endpoint simple para la eliminación
+@router.delete("/owners/{dni}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_owner(dni: str, db: Session = Depends(get_db)):
     try:
-        result = await delete_owner_and_pets(dni, db)
-        if result.get("message"):
-            # Redirigir a la página principal después de la eliminación exitosa
-            return {"success": True, "message": result["message"]}
-        return result
-    except HTTPException as e:
-        raise e
+        return await delete_owner_and_pets(dni, db)
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al confirmar la eliminación: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
