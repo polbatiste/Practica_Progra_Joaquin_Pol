@@ -8,6 +8,7 @@ Esto fue lo que te dijimos en el correo para la segunda entrega
 
 Esto cubriría prácticamente todas las funcionalidades que mencionamos en la primera reunión, salvo los gráficos y el dashboard interactivo, que planeamos dejar para la última entrega. Nuestra idea es implementar estos elementos ahora para obtener el máximo feedback posible de cara a la entrega final."
 
+
 Para esta segunda entrega, hemos implementado las funcionalidades planificadas anteriormente. Por motivos de horarios y actividades adicionales, hemos reorganizado las parejas de programación para optimizar el desarrollo del proyecto.  
 
 Jaime Oriol y Mateo Madrigal han trabajado en la implementación de **SQLAlchemy**, la cual se encuentra en la carpeta `app/database`. Esta implementación permite gestionar de forma ordenada y secuencial el alta de dueños, animales y citas. Primero, se debe dar de alta a un dueño; posteriormente, se registra un animal asociado a un dueño existente, y finalmente, se solicita una cita utilizando los datos previamente registrados. En esta carpeta se incluyen los siguientes archivos:  
