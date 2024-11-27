@@ -7,3 +7,7 @@ flake8
 pydantic[email]
 pymongo
 psycopg2-binary
+fpdf  # Para generar PDFs
+smtplib  # (parte estándar de Python, no requiere instalación)
+email  # (parte estándar de Python, no requiere instalación)
+python-dotenv  # Para manejar variables de entorno como las de correo

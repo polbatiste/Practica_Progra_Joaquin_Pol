@@ -1,11 +1,10 @@
-# app/server.py
-
 from fastapi import FastAPI
 from routers.routers_owners import router as owners_router
 from routers.routers_citas import router as appointments_router
 from routers.routers_animales import router as animals_router
 from routers.routers_tratamientos import router as tratamientos_router
 from routers.routers_productos import router as productos_router
+from routers.routers_facturas import router as invoices_router  # Nuevo router
 from database.engine import create_tables, seed_initial_data
 
 # Inicializar base de datos y datos iniciales
@@ -25,6 +24,7 @@ app.include_router(appointments_router, prefix="/api/v1")
 app.include_router(animals_router, prefix="/api/v1")
 app.include_router(tratamientos_router, prefix="/api/v1")
 app.include_router(productos_router, prefix="/api/v1")
+app.include_router(invoices_router, prefix="/api/v1")  # Nuevo router para facturas
 
 # Mensaje de bienvenida
 @app.get("/")
