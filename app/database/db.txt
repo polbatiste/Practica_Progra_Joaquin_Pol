@@ -26,6 +26,19 @@ CREATE TABLE appointments (
     consultation VARCHAR(50) NOT NULL,
     owner_id INTEGER NOT NULL,
     animal_id INTEGER NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,  -- Nuevo campo
     FOREIGN KEY(owner_id) REFERENCES owners(id),
     FOREIGN KEY(animal_id) REFERENCES animals(id)
+);
+
+CREATE TABLE invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    appointment_id INTEGER NOT NULL,
+    owner_id INTEGER NOT NULL,
+    treatments VARCHAR(500) NOT NULL,
+    total_price FLOAT NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    paid BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY(appointment_id) REFERENCES appointments(id),
+    FOREIGN KEY(owner_id) REFERENCES owners(id)
 );

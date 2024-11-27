@@ -1,9 +1,9 @@
-pydantic
+pydantic[email]
 fastapi
 pandas
 sqlalchemy
 pytest
 flake8
-pydantic[email]
 pymongo
 psycopg2-binary
+fpdf

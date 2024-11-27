@@ -33,10 +33,13 @@ def obtener_citas():
     try:
         respuesta = requests.get(url_api)
         respuesta.raise_for_status()
-        return respuesta.json()
+        citas = respuesta.json()
+        # Filtrar citas no completadas
+        return [cita for cita in citas if not cita.get("completed", False)]
     except:
         st.error("No se pudo conectar con el servidor")
         return []
+
 
 def obtener_tratamientos():
     try:
@@ -46,6 +49,16 @@ def obtener_tratamientos():
     except:
         st.error("No se pudo obtener la lista de tratamientos")
         return []
+
+def obtener_precios_tratamientos():
+    try:
+        respuesta = requests.get(url_tratamientos)
+        respuesta.raise_for_status()
+        tratamientos_data = respuesta.json()
+        return {t["nombre"]: t["precio"] for t in tratamientos_data}
+    except:
+        st.error("No se pudo obtener los precios de los tratamientos")
+        return {}
 
 def generar_horas_inicio():
     horas = []
@@ -190,3 +203,56 @@ if id_eliminar and st.button("Confirmar Eliminación"):
             st.error(f"Error al eliminar la cita: {respuesta.text}")
     except:
         st.error("No se pudo conectar con el servidor")
+
+# Completar una cita
+st.subheader("Completar Cita")
+id_completar = st.text_input("ID de la Cita a Completar", "")
+
+if id_completar:
+    cita = next((c for c in citas if str(c['id']) == id_completar), None)
+    if not cita:
+        st.error("Cita no encontrada o ya completada")
+    else:
+        # Obtener precios de tratamientos
+        precios_tratamientos = obtener_precios_tratamientos()
+        
+        with st.form("completar_cita_form"):
+            # Selección múltiple de tratamientos adicionales
+            tratamientos_adicionales = st.multiselect(
+                "Tratamientos adicionales",
+                options=tratamientos,
+                help="Seleccione los tratamientos realizados durante la cita"
+            )
+
+            # Selección del método de pago
+            metodo_pago = st.selectbox(
+                "Método de Pago",
+                options=["Efectivo", "Tarjeta", "Transferencia"]
+            )
+
+            # Calcular precio total basado en los precios reales
+            precio_total = sum(precios_tratamientos.get(t, 0) for t in tratamientos_adicionales)
+            st.write(f"Precio Total: {precio_total:.2f} EUR")
+
+            enviado = st.form_submit_button("Completar Cita")
+            if enviado:
+                if not tratamientos_adicionales:
+                    st.error("Debe seleccionar al menos un tratamiento adicional")
+                else:
+                    # Enviar datos al backend
+                    try:
+                        datos_completados = {
+                            "treatments": tratamientos_adicionales,
+                            "payment_method": metodo_pago
+                        }
+                        respuesta = requests.put(
+                            f"{url_api}/{id_completar}/complete",
+                            json=datos_completados
+                        )
+                        if respuesta.status_code == 201:
+                            st.success("Cita completada exitosamente. Factura generada.")
+                            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+                        else:
+                            st.error(f"Error al completar la cita: {respuesta.text}")
+                    except:
+                        st.error("No se pudo conectar con el servidor")
