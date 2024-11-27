@@ -1,5 +1,3 @@
-# streanlit/pages/5_Animales.py
-
 import streamlit as st
 import requests
 import pandas as pd
@@ -8,7 +6,7 @@ import pandas as pd
 API_URL_ANIMALS = "http://app:8000/api/v1/animals"
 API_URL_OWNERS = "http://app:8000/api/v1/owners"
 
-st.title("Alta de Animales - Clínica Veterinaria")
+st.title("Gestión de Animales - Clínica Veterinaria")
 
 def get_owners():
     try:
@@ -47,6 +45,28 @@ def get_animals():
     except:
         st.error("No se pudo obtener la lista de animales")
         return []
+
+def mark_animal_as_deceased(animal_id):
+    try:
+        response = requests.put(f"{API_URL_ANIMALS}/{animal_id}/mark-deceased")
+        if response.status_code == 200:
+            st.success(f"El animal con ID {animal_id} ha sido marcado como fallecido.")
+            st.experimental_rerun()
+        else:
+            st.error(f"Error al marcar como fallecido: {response.text}")
+    except:
+        st.error("No se pudo conectar con el servidor.")
+
+def delete_animal(animal_id):
+    try:
+        response = requests.delete(f"{API_URL_ANIMALS}/{animal_id}")
+        if response.status_code == 204:
+            st.success(f"El animal con ID {animal_id} ha sido eliminado.")
+            st.experimental_rerun()
+        else:
+            st.error(f"Error al eliminar el animal: {response.text}")
+    except:
+        st.error("No se pudo conectar con el servidor.")
 
 # Obtener datos
 owners = get_owners()
@@ -97,6 +117,7 @@ if animals:
             'Especie': animal['species'],
             'Raza': animal['breed'],
             'Edad': animal['age'],
+            'Estado': animal['status'],  # Mostrar estado
             'Dueño': owner['nombre'] if owner else 'Desconocido'
         })
     
@@ -104,3 +125,27 @@ if animals:
     st.table(df_animals)
 else:
     st.info("No hay animales registrados.")
+
+# Sección para marcar un animal como fallecido
+st.subheader("Marcar Animal como Fallecido")
+with st.form("mark_deceased_form"):
+    animal_id = st.number_input("ID del Animal", min_value=1, step=1, key="deceased_id")
+    submit_mark_deceased = st.form_submit_button("Marcar como Fallecido")
+    
+    if submit_mark_deceased:
+        if animal_id:
+            mark_animal_as_deceased(animal_id)
+        else:
+            st.error("Por favor, ingrese un ID válido.")
+
+# Sección para eliminar un animal
+st.subheader("Eliminar Animal")
+with st.form("delete_animal_form"):
+    animal_id = st.number_input("ID del Animal", min_value=1, step=1, key="delete_id")
+    submit_delete_animal = st.form_submit_button("Eliminar Animal")
+    
+    if submit_delete_animal:
+        if animal_id:
+            delete_animal(animal_id)
+        else:
+            st.error("Por favor, ingrese un ID válido.")

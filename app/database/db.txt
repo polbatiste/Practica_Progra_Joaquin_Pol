@@ -14,6 +14,7 @@ CREATE TABLE animals (
     breed VARCHAR(100) NOT NULL,
     age INTEGER NOT NULL,
     owner_id INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'vivo',  -- Nuevo campo para estado
     FOREIGN KEY(owner_id) REFERENCES owners(id)
 );
 
