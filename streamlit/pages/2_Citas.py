@@ -50,6 +50,16 @@ def obtener_tratamientos():
         st.error("No se pudo obtener la lista de tratamientos")
         return []
 
+def obtener_precios_tratamientos():
+    try:
+        respuesta = requests.get(url_tratamientos)
+        respuesta.raise_for_status()
+        tratamientos_data = respuesta.json()
+        return {t["nombre"]: t["precio"] for t in tratamientos_data}
+    except:
+        st.error("No se pudo obtener los precios de los tratamientos")
+        return {}
+
 def generar_horas_inicio():
     horas = []
     hora_actual = time(9, 0)
@@ -203,6 +213,9 @@ if id_completar:
     if not cita:
         st.error("Cita no encontrada o ya completada")
     else:
+        # Obtener precios de tratamientos
+        precios_tratamientos = obtener_precios_tratamientos()
+        
         with st.form("completar_cita_form"):
             # Selección múltiple de tratamientos adicionales
             tratamientos_adicionales = st.multiselect(
@@ -217,8 +230,8 @@ if id_completar:
                 options=["Efectivo", "Tarjeta", "Transferencia"]
             )
 
-            # Mostrar precio total dinámicamente
-            precio_total = len(tratamientos_adicionales) * 50.0  # Suponiendo un precio fijo
+            # Calcular precio total basado en los precios reales
+            precio_total = sum(precios_tratamientos.get(t, 0) for t in tratamientos_adicionales)
             st.write(f"Precio Total: {precio_total:.2f} EUR")
 
             enviado = st.form_submit_button("Completar Cita")

@@ -1,10 +1,9 @@
-# app/routers/routers_facturas.py
-
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database.data.models import Invoice as InvoiceModel, Owner as OwnerModel
 from database.engine import get_db
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
 router = APIRouter()
@@ -21,6 +20,10 @@ class Invoice(BaseModel):
 
     class Config:
         orm_mode = True
+
+# Modelo para el email
+class EmailSchema(BaseModel):
+    recipient_email: EmailStr
 
 # Obtener todas las facturas con filtros opcionales
 @router.get("/invoices", response_model=List[Invoice])
@@ -51,27 +54,45 @@ def pay_invoice(invoice_id: int, db: Session = Depends(get_db)):
     return invoice
 
 # Descargar factura en formato PDF
-@router.get("/invoices/{invoice_id}/download", status_code=200)
-def download_invoice(invoice_id: int, db: Session = Depends(get_db)):
-    from app.utils.pdf_generator import generate_pdf  # Importa la función para generar PDFs
-
-    invoice = db.query(InvoiceModel).filter(InvoiceModel.id == invoice_id).first()
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Factura no encontrada")
-
-    owner = db.query(OwnerModel).filter(OwnerModel.id == invoice.owner_id).first()
-    if not owner:
-        raise HTTPException(status_code=404, detail="Propietario no encontrado")
-
-    # Generar PDF con los datos de la factura
-    pdf_path = generate_pdf(invoice, owner)
-    return {"message": f"Factura descargada: {pdf_path}"}
+@router.get("/invoices/{invoice_id}/download")
+async def download_invoice(invoice_id: int, db: Session = Depends(get_db)):
+    try:
+        from utils.pdf_generator import generate_pdf
+        
+        invoice = db.query(InvoiceModel).filter(InvoiceModel.id == invoice_id).first()
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+        
+        owner = db.query(OwnerModel).filter(OwnerModel.id == invoice.owner_id).first()
+        if not owner:
+            raise HTTPException(status_code=404, detail="Propietario no encontrado")
+        
+        pdf_path = generate_pdf(invoice, owner)
+        
+        headers = {
+            "Content-Disposition": f"attachment; filename=factura_{invoice_id}.pdf",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Access-Control-Allow-Headers": "Content-Disposition"
+        }
+        
+        return FileResponse(
+            path=pdf_path,
+            media_type='application/pdf',
+            filename=f"factura_{invoice_id}.pdf",
+            headers=headers
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar o descargar la factura: {str(e)}")
 
 # Enviar factura por correo
 @router.post("/invoices/{invoice_id}/send-email", status_code=200)
-def send_invoice_email(invoice_id: int, recipient_email: str, db: Session = Depends(get_db)):
-    from app.utils.email_sender import send_email_with_attachment  # Importa la función para enviar correos
-    from app.utils.pdf_generator import generate_pdf  # Genera el PDF antes de enviarlo
+def send_invoice_email(
+    invoice_id: int, 
+    email_data: EmailSchema,
+    db: Session = Depends(get_db)
+):
+    from utils.email_sender import send_email_with_attachment
+    from utils.pdf_generator import generate_pdf
 
     invoice = db.query(InvoiceModel).filter(InvoiceModel.id == invoice_id).first()
     if not invoice:
@@ -84,11 +105,14 @@ def send_invoice_email(invoice_id: int, recipient_email: str, db: Session = Depe
     # Generar el PDF de la factura
     pdf_path = generate_pdf(invoice, owner)
 
-    # Enviar el PDF como archivo adjunto
-    send_email_with_attachment(
-        recipient_email,
-        subject="Factura de la Clínica Veterinaria",
-        body="Adjunto encontrará la factura correspondiente a su cita.",
-        attachment_path=pdf_path
-    )
-    return {"message": f"Factura enviada a {recipient_email}"}
+    try:
+        # Enviar el PDF como archivo adjunto
+        send_email_with_attachment(
+            email_data.recipient_email,
+            subject="Factura de la Clínica Veterinaria",
+            body="Adjunto encontrará la factura correspondiente a su cita.",
+            attachment_path=pdf_path
+        )
+        return {"message": f"Factura enviada a {email_data.recipient_email}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al enviar el email: {str(e)}")

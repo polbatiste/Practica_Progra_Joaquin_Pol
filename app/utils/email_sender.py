@@ -8,16 +8,12 @@ import os
 def send_email_with_attachment(recipient_email, subject, body, attachment_path):
     """
     Envía un correo electrónico con un archivo adjunto.
-    :param recipient_email: Dirección de correo del destinatario.
-    :param subject: Asunto del correo.
-    :param body: Cuerpo del mensaje.
-    :param attachment_path: Ruta del archivo adjunto.
     """
-    # Configuración del servidor SMTP
-    smtp_server = "smtp.gmail.com"  # Cambiar según tu proveedor
+    # Credenciales de correo
+    smtp_server = "smtp.gmail.com"
     smtp_port = 587
-    sender_email = os.getenv("EMAIL_SENDER")  # Correo del remitente
-    sender_password = os.getenv("EMAIL_PASSWORD")  # Contraseña del remitente
+    sender_email = "joriolgo@gmail.com"
+    sender_password = "uaty uegu jndh fjjj"
 
     # Crear mensaje
     msg = MIMEMultipart()
@@ -44,5 +40,7 @@ def send_email_with_attachment(recipient_email, subject, body, attachment_path):
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, recipient_email, msg.as_string())
         print(f"Correo enviado exitosamente a {recipient_email}")
+        return True
     except Exception as e:
         print(f"Error al enviar el correo: {e}")
+        return False
