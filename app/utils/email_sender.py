@@ -1,3 +1,5 @@
+# utils/email_sender.py
+
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -5,9 +7,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os
 
-def send_email_with_attachment(recipient_email, subject, body, attachment_path):
+def send_email_with_attachment(recipient_email, subject, body, attachment_path=None):
     """
-    Envía un correo electrónico con un archivo adjunto.
+    Envía un correo electrónico con un archivo adjunto opcional.
     """
     # Credenciales de correo
     smtp_server = "smtp.gmail.com"
@@ -22,16 +24,21 @@ def send_email_with_attachment(recipient_email, subject, body, attachment_path):
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
 
-    # Adjuntar archivo
-    with open(attachment_path, "rb") as attachment:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header(
-        "Content-Disposition",
-        f"attachment; filename={os.path.basename(attachment_path)}",
-    )
-    msg.attach(part)
+    # Adjuntar archivo si se proporciona uno
+    if attachment_path is not None:
+        try:
+            with open(attachment_path, "rb") as attachment:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={os.path.basename(attachment_path)}",
+            )
+            msg.attach(part)
+        except Exception as e:
+            print(f"Error al adjuntar archivo: {e}")
+            return False
 
     # Enviar correo
     try:
