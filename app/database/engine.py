@@ -1,5 +1,3 @@
-# database/engine.py
-
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -45,8 +43,8 @@ def seed_initial_data():
                 telefono="555-1234",
                 correo_electronico="joriolgo@gmail.com",
                 animals=[
-                    Animal(name="Jorge Grube", species="Perro", breed="Golden Retriever", age=5),
-                    Animal(name="Mbappe", species="Gato", breed="Siamés", age=3)
+                    Animal(name="Jorge Grube", species="Perro", breed="Golden Retriever", age=5, status="vivo"),
+                    Animal(name="Mbappe", species="Gato", breed="Siamés", age=3, status="fallecido")  # Animal fallecido
                 ]
             )
             owner2 = Owner(
@@ -56,8 +54,8 @@ def seed_initial_data():
                 telefono="555-5678",
                 correo_electronico="quino.mier@example.com",
                 animals=[
-                    Animal(name="Alfredo Perez", species="Perro", breed="Bulldog", age=4),
-                    Animal(name="Mateo Madrigal", species="Gato", breed="Maine Coon", age=2)
+                    Animal(name="Alfredo Perez", species="Perro", breed="Bulldog", age=4, status="vivo"),
+                    Animal(name="Mateo Madrigal", species="Gato", breed="Maine Coon", age=2, status="vivo")
                 ]
             )
 
