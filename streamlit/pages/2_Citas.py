@@ -1,9 +1,72 @@
-# streanlit/pages/2_Citas.py
-
 import streamlit as st
 import requests
 import pandas as pd
 from datetime import datetime, timedelta, time
+
+# Configuración de la página
+st.set_page_config(
+    page_title="Clínica Veterinaria - Gestión de Citas",
+    page_icon="🏥",
+    layout="wide"
+)
+
+# Estilos personalizados
+st.markdown("""
+    <style>
+    .main {
+        padding: 2rem;
+    }
+    .stButton button {
+        background-color: #2c3e50;
+        color: white;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+    }
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > input {
+        border-radius: 4px;
+    }
+    h1 {
+        color: #2c3e50;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #eee;
+    }
+    h2 {
+        color: #34495e;
+        margin-top: 2rem;
+    }
+    .table-container {
+        margin: 2rem 0;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .success {
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .error {
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .warning {
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .info {
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # URLs de la API
 url_api = "http://app:8000/api/v1/appointments"
@@ -11,13 +74,14 @@ url_tratamientos = "http://app:8000/api/v1/tratamientos"
 url_owners = "http://app:8000/api/v1/owners"
 url_animals = "http://app:8000/api/v1/animals"
 
+# Funciones auxiliares
 def obtener_dueños():
     try:
         respuesta = requests.get(url_owners)
         respuesta.raise_for_status()
         return respuesta.json()
     except:
-        st.error("No se pudo obtener la lista de dueños")
+        st.error("Error en la conexión: No se pudo obtener la lista de propietarios")
         return []
 
 def obtener_animales():
@@ -26,7 +90,7 @@ def obtener_animales():
         respuesta.raise_for_status()
         return respuesta.json()
     except:
-        st.error("No se pudo obtener la lista de animales")
+        st.error("Error en la conexión: No se pudo obtener la lista de pacientes")
         return []
 
 def obtener_citas():
@@ -34,12 +98,10 @@ def obtener_citas():
         respuesta = requests.get(url_api)
         respuesta.raise_for_status()
         citas = respuesta.json()
-        # Filtrar citas no completadas
         return [cita for cita in citas if not cita.get("completed", False)]
     except:
-        st.error("No se pudo conectar con el servidor")
+        st.error("Error en la conexión: No se pudo obtener la lista de citas")
         return []
-
 
 def obtener_tratamientos():
     try:
@@ -47,7 +109,7 @@ def obtener_tratamientos():
         respuesta.raise_for_status()
         return [tratamiento["nombre"] for tratamiento in respuesta.json()]
     except:
-        st.error("No se pudo obtener la lista de tratamientos")
+        st.error("Error en la conexión: No se pudo obtener la lista de tratamientos")
         return []
 
 def obtener_precios_tratamientos():
@@ -57,7 +119,7 @@ def obtener_precios_tratamientos():
         tratamientos_data = respuesta.json()
         return {t["nombre"]: t["precio"] for t in tratamientos_data}
     except:
-        st.error("No se pudo obtener los precios de los tratamientos")
+        st.error("Error en la conexión: No se pudo obtener los precios de los tratamientos")
         return {}
 
 def generar_horas_inicio():
@@ -74,7 +136,7 @@ def asignar_consulta(fecha, hora, citas):
     for consulta in consultas_disponibles:
         if not any(cita["date"] == fecha and cita["time"] == hora and cita["consultation"] == consulta for cita in citas):
             return consulta
-    st.error("No hay consultas disponibles para la fecha y hora seleccionadas")
+    st.error("No hay consultas disponibles para el horario seleccionado")
     return None
 
 def crear_actualizar_cita(id_cita, owner_id, animal_id, fecha, hora, tratamiento, motivo, citas, es_actualizacion=False):
@@ -102,157 +164,170 @@ def crear_actualizar_cita(id_cita, owner_id, animal_id, fecha, hora, tratamiento
             respuesta = requests.post(url_api, json=datos_cita)
 
         if respuesta.status_code in [200, 201]:
-            st.success(f"Cita gestionada exitosamente en la consulta {consulta}")
+            st.success(f"Cita registrada exitosamente en consulta {consulta}")
             st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
         else:
-            st.error(f"Error al gestionar la cita: {respuesta.text}")
+            st.error(f"Error en el registro: {respuesta.text}")
     except:
-        st.error("No se pudo conectar con el servidor")
+        st.error("Error en la conexión con el servidor")
 
-st.title("Agenda tu Cita en la Clínica Veterinaria")
+# Título principal
+st.title("Sistema de Gestión de Citas")
 
-# Obtener datos
+# Obtener datos necesarios
 citas = obtener_citas()
 dueños = obtener_dueños()
 animales = obtener_animales()
 tratamientos = obtener_tratamientos()
 opciones_de_horas = generar_horas_inicio()
 
-# Mostrar citas programadas
-st.subheader("Citas Programadas")
+# Sección de citas programadas
+st.header("Agenda de Citas")
 if citas:
     citas_enriquecidas = []
     for cita in citas:
         dueño = next((d for d in dueños if d['id'] == cita['owner_id']), None)
         animal = next((a for a in animales if a['id'] == cita['animal_id']), None)
         citas_enriquecidas.append({
-            "ID de Cita": cita['id'],
-            "Dueño": dueño['nombre'] if dueño else "Desconocido",
-            "Mascota": animal['name'] if animal else "Desconocido",
+            "ID": cita['id'],
+            "Propietario": dueño['nombre'] if dueño else "No registrado",
+            "Paciente": animal['name'] if animal else "No registrado",
             "Fecha": cita['date'],
             "Hora": cita['time'],
             "Tratamiento": cita['treatment'],
             "Motivo": cita['reason'],
             "Consulta": cita['consultation']
         })
-    st.table(pd.DataFrame(citas_enriquecidas))
+    st.dataframe(
+        pd.DataFrame(citas_enriquecidas),
+        use_container_width=True,
+        hide_index=True
+    )
 else:
-    st.info("No hay citas programadas")
+    st.info("No hay citas pendientes en el sistema")
 
-# Formulario de citas
-st.subheader("Programar o Modificar Cita")
-
-# Control de estado para el dueño seleccionado
+# Control de estado para el propietario seleccionado
 if 'previous_owner' not in st.session_state:
     st.session_state.previous_owner = None
 
-# Selector de dueño fuera del formulario
+# Sección de registro/modificación de citas
+st.header("Registro de Citas")
+
+# Selector de propietario
 dueño_options = {f"{d['nombre']} (DNI: {d['dni']})": d['id'] for d in dueños}
-selected_dueño = st.selectbox("Seleccionar Dueño", options=list(dueño_options.keys()))
+selected_dueño = st.selectbox("Seleccionar Propietario", options=list(dueño_options.keys()))
 owner_id = dueño_options[selected_dueño] if selected_dueño else None
 
-# Forzar recarga si cambia el dueño
+# Actualizar si cambia el propietario
 if owner_id != st.session_state.previous_owner:
     st.session_state.previous_owner = owner_id
     st.rerun()
 
-with st.form("formulario_cita"):
-    id_cita = st.text_input("ID de la Cita (solo para modificar)")
+with st.form("formulario_cita", clear_on_submit=True):
+    col1, col2 = st.columns(2)
     
-    # Selector de animal filtrado por dueño
-    animal_id = None
-    if owner_id:
-        animales_dueño = [a for a in animales if a['owner_id'] == owner_id]
-        if animales_dueño:
-            animal_options = {a['name']: a['id'] for a in animales_dueño}
-            selected_animal = st.selectbox(
-                "Seleccionar Mascota", 
-                options=list(animal_options.keys()),
-                key=f"animal_select_{owner_id}"
-            )
-            animal_id = animal_options[selected_animal] if selected_animal else None
+    with col1:
+        id_cita = st.text_input("ID de Cita (solo para modificaciones)")
+        if owner_id:
+            animales_dueño = [a for a in animales if a['owner_id'] == owner_id]
+            if animales_dueño:
+                animal_options = {a['name']: a['id'] for a in animales_dueño}
+                selected_animal = st.selectbox(
+                    "Seleccionar Paciente", 
+                    options=list(animal_options.keys()),
+                    key=f"animal_select_{owner_id}"
+                )
+                animal_id = animal_options[selected_animal] if selected_animal else None
+            else:
+                st.warning("El propietario no tiene pacientes registrados")
         else:
-            st.warning("Este dueño no tiene mascotas registradas")
-    else:
-        st.warning("Seleccione un dueño primero")
+            st.warning("Seleccione un propietario para continuar")
+            animal_id = None
+        
+        fecha = st.date_input("Fecha de la Cita")
+    
+    with col2:
+        hora = st.selectbox("Hora de la Cita", opciones_de_horas)
+        tratamiento = st.selectbox("Tipo de Tratamiento", tratamientos)
+        motivo = st.text_area("Motivo de la Consulta")
 
-    fecha = st.date_input("Fecha")
-    hora = st.selectbox("Hora", opciones_de_horas)
-    tratamiento = st.selectbox("Tratamiento", tratamientos)
-    motivo = st.text_area("Motivo")
-
-    enviado = st.form_submit_button("Enviar")
+    enviado = st.form_submit_button("Registrar Cita")
     if enviado:
         if fecha.weekday() == 6:
-            st.error("No se pueden programar citas los domingos")
+            st.error("No se realizan atenciones los días domingo")
         elif not all([owner_id, animal_id, fecha, hora, tratamiento, motivo]):
-            st.error("Complete todos los campos del formulario")
+            st.error("Todos los campos son obligatorios")
         else:
             crear_actualizar_cita(id_cita, owner_id, animal_id, fecha, hora, tratamiento, motivo, citas, bool(id_cita))
 
-# Eliminar citas
-st.subheader("Eliminar Cita")
-id_eliminar = st.text_input("ID de la Cita a Eliminar", "")
-if id_eliminar and st.button("Confirmar Eliminación"):
-    try:
-        respuesta = requests.delete(f"{url_api}/{id_eliminar}")
-        if respuesta.status_code == 204:
-            st.success("Cita eliminada exitosamente")
-            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+# Sección de gestión de citas
+st.header("Gestión de Citas")
+
+tab1, tab2 = st.tabs(["Cancelar Cita", "Completar Cita"])
+
+with tab1:
+    with st.form("cancelar_cita", clear_on_submit=True):
+        id_eliminar = st.text_input("ID de la Cita a Cancelar")
+        motivo_cancelacion = st.text_area("Motivo de la Cancelación")
+        if st.form_submit_button("Confirmar Cancelación"):
+            if id_eliminar and motivo_cancelacion:
+                try:
+                    respuesta = requests.delete(f"{url_api}/{id_eliminar}")
+                    if respuesta.status_code == 204:
+                        st.success("Cita cancelada exitosamente")
+                        st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+                    else:
+                        st.error(f"Error en la cancelación: {respuesta.text}")
+                except:
+                    st.error("Error en la conexión con el servidor")
+            else:
+                st.error("El ID de la cita y el motivo de cancelación son obligatorios")
+
+with tab2:
+    id_completar = st.text_input("ID de la Cita a Completar")
+    
+    if id_completar:
+        cita = next((c for c in citas if str(c['id']) == id_completar), None)
+        if not cita:
+            st.error("Cita no encontrada o ya completada")
         else:
-            st.error(f"Error al eliminar la cita: {respuesta.text}")
-    except:
-        st.error("No se pudo conectar con el servidor")
+            precios_tratamientos = obtener_precios_tratamientos()
+            
+            with st.form("completar_cita", clear_on_submit=True):
+                tratamientos_adicionales = st.multiselect(
+                    "Tratamientos Realizados",
+                    options=tratamientos,
+                    help="Seleccione todos los tratamientos realizados durante la consulta"
+                )
 
-# Completar una cita
-st.subheader("Completar Cita")
-id_completar = st.text_input("ID de la Cita a Completar", "")
+                col1, col2 = st.columns(2)
+                with col1:
+                    metodo_pago = st.selectbox(
+                        "Método de Pago",
+                        options=["Efectivo", "Tarjeta", "Transferencia"]
+                    )
+                
+                with col2:
+                    precio_total = sum(precios_tratamientos.get(t, 0) for t in tratamientos_adicionales)
+                    st.metric("Total a Cobrar", f"{precio_total:.2f} EUR")
 
-if id_completar:
-    cita = next((c for c in citas if str(c['id']) == id_completar), None)
-    if not cita:
-        st.error("Cita no encontrada o ya completada")
-    else:
-        # Obtener precios de tratamientos
-        precios_tratamientos = obtener_precios_tratamientos()
-        
-        with st.form("completar_cita_form"):
-            # Selección múltiple de tratamientos adicionales
-            tratamientos_adicionales = st.multiselect(
-                "Tratamientos adicionales",
-                options=tratamientos,
-                help="Seleccione los tratamientos realizados durante la cita"
-            )
-
-            # Selección del método de pago
-            metodo_pago = st.selectbox(
-                "Método de Pago",
-                options=["Efectivo", "Tarjeta", "Transferencia"]
-            )
-
-            # Calcular precio total basado en los precios reales
-            precio_total = sum(precios_tratamientos.get(t, 0) for t in tratamientos_adicionales)
-            st.write(f"Precio Total: {precio_total:.2f} EUR")
-
-            enviado = st.form_submit_button("Completar Cita")
-            if enviado:
-                if not tratamientos_adicionales:
-                    st.error("Debe seleccionar al menos un tratamiento adicional")
-                else:
-                    # Enviar datos al backend
-                    try:
-                        datos_completados = {
-                            "treatments": tratamientos_adicionales,
-                            "payment_method": metodo_pago
-                        }
-                        respuesta = requests.put(
-                            f"{url_api}/{id_completar}/complete",
-                            json=datos_completados
-                        )
-                        if respuesta.status_code == 201:
-                            st.success("Cita completada exitosamente. Factura generada.")
-                            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
-                        else:
-                            st.error(f"Error al completar la cita: {respuesta.text}")
-                    except:
-                        st.error("No se pudo conectar con el servidor")
+                if st.form_submit_button("Finalizar Consulta"):
+                    if not tratamientos_adicionales:
+                        st.error("Debe registrar al menos un tratamiento")
+                    else:
+                        try:
+                            datos_completados = {
+                                "treatments": tratamientos_adicionales,
+                                "payment_method": metodo_pago
+                            }
+                            respuesta = requests.put(
+                                f"{url_api}/{id_completar}/complete",
+                                json=datos_completados
+                            )
+                            if respuesta.status_code == 201:
+                                st.success("Consulta finalizada exitosamente. Factura generada.")
+                                st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+                            else:
+                                st.error(f"Error al finalizar la consulta: {respuesta.text}")
+                        except:
+                            st.error("Error en la conexión con el servidor")
