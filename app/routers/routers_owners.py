@@ -1,5 +1,3 @@
-# app/routers/routers_owners.py
-
 from fastapi import APIRouter, HTTPException, status, Query, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from database.data.models import Owner as OwnerModel, Animal as AnimalModel
@@ -38,8 +36,7 @@ async def delete_owner_and_pets(dni: str, db: Session):
         # Eliminar dueño
         db.delete(db_owner)
         db.commit()
-        
-        return {"message": "Dueño y mascotas eliminados exitosamente"}
+        return db_owner
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al eliminar: {str(e)}")
@@ -106,61 +103,39 @@ def update_owner(dni: str, owner_update: Owner, db: Session = Depends(get_db)):
     db.refresh(db_owner)
     return db_owner
 
-@router.post("/owners/delete-request")
-async def request_deletion(
+@router.post("/owners/delete", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_owner(
     delete_request: DeleteRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    db_owner = db.query(OwnerModel).filter(
-        OwnerModel.dni == delete_request.dni,
-        OwnerModel.correo_electronico == delete_request.email
-    ).first()
-    
-    if not db_owner:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró un dueño con el DNI y correo proporcionados"
-        )
-    
-    # Preparar el correo de confirmación
-    subject = "Confirmación de eliminación de datos - Clínica Veterinaria"
-    body = f"""
-    Estimado/a {db_owner.nombre},
-
-    Hemos recibido su solicitud de eliminación de datos de nuestro sistema.
-    Para confirmar la eliminación de sus datos y los de sus mascotas asociadas, por favor haga clic en el siguiente enlace:
-    
-    http://localhost:8501/?delete={db_owner.dni}
-    
-    Si no ha solicitado esta eliminación, por favor ignore este correo.
-
-    Razón proporcionada para la eliminación: {delete_request.reason if delete_request.reason else 'No especificada'}
-
-    Atentamente,
-    Clínica Veterinaria
-    """
-    
-    email_sent = send_email_with_attachment(
-        recipient_email=delete_request.email,
-        subject=subject,
-        body=body,
-        attachment_path=None
-    )
-    
-    if not email_sent:
-        raise HTTPException(
-            status_code=500,
-            detail="Error al enviar el correo de confirmación"
-        )
-    
-    return {"message": "Solicitud de eliminación recibida. Se ha enviado un correo de confirmación."}
-
-@router.delete("/owners/{dni}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_owner(dni: str, db: Session = Depends(get_db)):
     try:
-        result = await delete_owner_and_pets(dni, db)
-        return result
+        # Eliminar dueño y mascotas
+        deleted_owner = await delete_owner_and_pets(delete_request.dni, db)
+
+        # Enviar correo de confirmación
+        subject = "Confirmación de eliminación de datos - Clínica Veterinaria"
+        body = f"""
+        Estimado/a {deleted_owner.nombre},
+
+        Sus datos y los de sus mascotas asociadas han sido eliminados de nuestro sistema.
+
+        Razón proporcionada para la eliminación: {delete_request.reason if delete_request.reason else 'No especificada'}
+
+        Atentamente,
+        Clínica Veterinaria
+        """
+        email_sent = send_email_with_attachment(
+            recipient_email=delete_request.email,
+            subject=subject,
+            body=body,
+            attachment_path=None
+        )
+
+        if not email_sent:
+            raise HTTPException(status_code=500, detail="Error al enviar el correo de confirmación")
+        
+        return {"message": "Dueño y mascotas eliminados exitosamente"}
     except HTTPException as e:
         raise e
     except Exception as e:

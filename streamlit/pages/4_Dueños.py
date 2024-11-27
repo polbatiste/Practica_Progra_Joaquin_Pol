@@ -1,5 +1,3 @@
-# streamlit/pages/4_Dueños.py
-
 import streamlit as st
 import requests
 import pandas as pd
@@ -7,7 +5,7 @@ import time
 
 API_URL = "http://app:8000/api/v1/owners"
 
-st.title("Alta de Dueños - Clínica Veterinaria")
+st.title("Gestión de Dueños - Clínica Veterinaria")
 
 def create_owner(nombre, dni, direccion, telefono, correo_electronico):
     data = {
@@ -41,7 +39,7 @@ def request_owner_deletion(dni, email, reason):
         "email": email,
         "reason": reason
     }
-    response = requests.post(f"{API_URL}/delete-request", json=data)
+    response = requests.post(f"{API_URL}/delete", json=data)
     return response
 
 if 'from_animals' not in st.session_state:
@@ -67,51 +65,23 @@ if st.session_state.get('from_animals'):
         st.switch_page("pages/5_Animales.py")
 
 # Sección de Eliminación
-st.subheader("🗑️ Solicitar Eliminación de Datos")
+st.subheader("🗑️ Eliminar Dueño y sus Mascotas")
 with st.form("delete_form"):
     delete_dni = st.text_input("DNI del dueño a eliminar")
-    delete_email = st.text_input("Correo electrónico de confirmación")
+    delete_email = st.text_input("Correo electrónico")
     delete_reason = st.text_area("Razón de la eliminación (opcional)")
     
-    delete_submit = st.form_submit_button("🗑️ Solicitar Eliminación")
+    delete_submit = st.form_submit_button("🗑️ Eliminar")
     
     if delete_submit:
         if not delete_dni or not delete_email:
             st.error("❌ Por favor, complete los campos obligatorios (DNI y correo electrónico)")
         else:
             response = request_owner_deletion(delete_dni, delete_email, delete_reason)
-            if response.status_code == 200:
-                st.success("""
-                    ✅ Solicitud de eliminación enviada correctamente.
-                    📧 Por favor, revise su correo electrónico para confirmar la eliminación.
-                """)
+            if response.status_code == 204:
+                st.success("✅ Dueño eliminado y correo de confirmación enviado.")
             else:
                 st.error(f"❌ Error al procesar la solicitud: {response.json().get('detail', 'Error desconocido')}")
-
-# Sección de Confirmación de Eliminación
-params = st.query_params
-if 'delete' in params:
-    dni = params['delete']
-    
-    st.warning("⚠️ ¿Está seguro que desea eliminar permanentemente sus datos y los de sus mascotas asociadas?")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("✔️ Confirmar eliminación"):
-            try:
-                response = requests.delete(f"{API_URL}/{dni}")
-                if response.status_code in [200, 204]:
-                    st.success("✅ Sus datos han sido eliminados exitosamente")
-                    st.balloons()
-                    time.sleep(1)
-                    st.write('<meta http-equiv="refresh" content="1;url=/">', unsafe_allow_html=True)
-                else:
-                    st.error("❌ Error al eliminar los datos")
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
-    with col2:
-        if st.button("❌ Cancelar"):
-            st.write('<meta http-equiv="refresh" content="0;url=/">', unsafe_allow_html=True)
 
 # Sección de Listado
 st.subheader("📋 Dueños Registrados")
