@@ -1,16 +1,17 @@
 # app/routers/routers_owners.py
 
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, HTTPException, status, Query, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from database.data.models import Owner as OwnerModel
+from database.data.models import Owner as OwnerModel, Animal as AnimalModel
 from database.engine import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from utils.email_sender import send_email_with_attachment
 
 router = APIRouter()
 
 class Owner(BaseModel):
-    id: Optional[int] = None  # Añade =None
+    id: Optional[int] = None
     nombre: str
     dni: str
     direccion: str
@@ -18,7 +19,26 @@ class Owner(BaseModel):
     correo_electronico: EmailStr
 
     class Config:
-        from_attributes = True  # Actualiza esto también
+        from_attributes = True
+
+class DeleteRequest(BaseModel):
+    dni: str
+    email: EmailStr
+    reason: Optional[str] = None
+
+async def delete_owner_and_pets(dni: str, db: Session):
+    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
+    if not db_owner:
+        raise HTTPException(status_code=404, detail="Dueño no encontrado")
+    
+    # Eliminar mascotas asociadas
+    db.query(AnimalModel).filter(AnimalModel.owner_id == db_owner.id).delete()
+    
+    # Eliminar dueño
+    db.delete(db_owner)
+    db.commit()
+    
+    return {"message": "Dueño y mascotas eliminados exitosamente"}
 
 @router.post("/owners", response_model=Owner, status_code=status.HTTP_201_CREATED)
 def create_owner(owner: Owner, db: Session = Depends(get_db)):
@@ -56,14 +76,8 @@ def update_owner(dni: str, owner_update: Owner, db: Session = Depends(get_db)):
     return db_owner
 
 @router.delete("/owners/{dni}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_owner(dni: str, db: Session = Depends(get_db)):
-    db_owner = db.query(OwnerModel).filter(OwnerModel.dni == dni).first()
-    if not db_owner:
-        raise HTTPException(status_code=404, detail="Dueño no encontrado")
-    
-    db.delete(db_owner)
-    db.commit()
-    return {"message": "Dueño eliminado exitosamente"}
+async def delete_owner(dni: str, db: Session = Depends(get_db)):
+    return await delete_owner_and_pets(dni, db)
 
 @router.get("/owners/search", response_model=List[Owner])
 def search_owners(
@@ -91,3 +105,58 @@ def search_owners(
     if not results:
         raise HTTPException(status_code=404, detail="No se encontraron dueños con los criterios de búsqueda")
     return results
+
+@router.post("/owners/delete-request")
+async def request_deletion(
+    delete_request: DeleteRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    db_owner = db.query(OwnerModel).filter(
+        OwnerModel.dni == delete_request.dni,
+        OwnerModel.correo_electronico == delete_request.email
+    ).first()
+    
+    if not db_owner:
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontró un dueño con el DNI y correo proporcionados"
+        )
+    
+    # Preparar el correo de confirmación
+    subject = "Confirmación de eliminación de datos - Clínica Veterinaria"
+    body = f"""
+    Estimado/a {db_owner.nombre},
+
+    Hemos recibido su solicitud de eliminación de datos de nuestro sistema.
+    Para confirmar la eliminación de sus datos y los de sus mascotas asociadas, por favor haga clic en el siguiente enlace:
+    
+    http://localhost:8501/confirm-deletion/{db_owner.dni}
+    
+    Si no ha solicitado esta eliminación, por favor ignore este correo.
+
+    Razón proporcionada para la eliminación: {delete_request.reason if delete_request.reason else 'No especificada'}
+
+    Atentamente,
+    Clínica Veterinaria
+    """
+    
+    # Enviar correo
+    email_sent = send_email_with_attachment(
+        recipient_email=delete_request.email,
+        subject=subject,
+        body=body,
+        attachment_path=None
+    )
+    
+    if not email_sent:
+        raise HTTPException(
+            status_code=500,
+            detail="Error al enviar el correo de confirmación"
+        )
+    
+    return {"message": "Solicitud de eliminación recibida. Se ha enviado un correo de confirmación."}
+
+@router.get("/owners/confirm-deletion/{dni}")
+async def confirm_deletion(dni: str, db: Session = Depends(get_db)):
+    return await delete_owner_and_pets(dni, db)
