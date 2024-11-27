@@ -110,7 +110,7 @@ modules = [
         "color": "#9b59b6"
     },
     {
-        "title": "Registro de Propietarios",
+        "title": "Gestión de Propietarios",
         "icon": "👥",
         "description": "Gestión completa de datos de propietarios. Incluye información de contacto, historial de visitas y registro de mascotas asociadas.",
         "color": "#34495e"
