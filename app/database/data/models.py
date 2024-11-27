@@ -25,6 +25,7 @@ class Animal(Base):
     breed = Column(String(100), nullable=False)
     age = Column(Integer, nullable=False)
     owner_id = Column(Integer, ForeignKey('owners.id'), nullable=False)
+    status = Column(String(20), default="vivo")  # Nuevo campo para el estado del animal ("vivo", "fallecido")
     
     owner = relationship("Owner", back_populates="animals")
     appointments = relationship("Appointment", back_populates="animal", cascade="all, delete-orphan")
