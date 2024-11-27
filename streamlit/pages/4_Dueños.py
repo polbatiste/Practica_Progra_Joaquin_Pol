@@ -44,24 +44,6 @@ def request_owner_deletion(dni, email, reason):
     response = requests.post(f"{API_URL}/delete-request", json=data)
     return response
 
-def check_deletion_confirmation(dni: str):
-    try:
-        response = requests.get(f"{API_URL}/confirm-deletion/{dni}")
-        if response.status_code == 200:
-            st.success("✅ Sus datos han sido eliminados exitosamente")
-            st.balloons()
-            time.sleep(2)
-            # Recargar la página principal
-            st.write('<meta http-equiv="refresh" content="2;url=/">', unsafe_allow_html=True)
-            return True
-        else:
-            error_msg = response.json().get('detail', 'Error desconocido')
-            st.error(f"❌ Error al procesar la eliminación: {error_msg}")
-            return False
-    except Exception as e:
-        st.error(f"❌ Error en la solicitud: {str(e)}")
-        return False
-
 if 'from_animals' not in st.session_state:
     st.session_state['from_animals'] = False
 
@@ -107,8 +89,6 @@ with st.form("delete_form"):
                 st.error(f"❌ Error al procesar la solicitud: {response.json().get('detail', 'Error desconocido')}")
 
 # Sección de Confirmación de Eliminación
-# En la sección de confirmación de eliminación:
-
 params = st.query_params
 if 'delete' in params:
     dni = params['delete']
@@ -123,22 +103,15 @@ if 'delete' in params:
                 if response.status_code in [200, 204]:
                     st.success("✅ Sus datos han sido eliminados exitosamente")
                     st.balloons()
-                    time.sleep(2)
-                    st.rerun()
+                    time.sleep(1)
+                    st.write('<meta http-equiv="refresh" content="1;url=/">', unsafe_allow_html=True)
                 else:
                     st.error("❌ Error al eliminar los datos")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-    
     with col2:
         if st.button("❌ Cancelar"):
             st.write('<meta http-equiv="refresh" content="0;url=/">', unsafe_allow_html=True)
-
-# Mostrar estado de la eliminación si está en progreso
-if st.session_state.get('deletion_confirmed'):
-    st.info("🔄 Procesando la eliminación...")
-    time.sleep(1)
-    st.experimental_rerun()
 
 # Sección de Listado
 st.subheader("📋 Dueños Registrados")
