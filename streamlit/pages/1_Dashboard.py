@@ -26,9 +26,9 @@ df_animals = load_data('http://app:8000/api/v1/animals')  # Animales
 total_citas, total_clientes, total_animales = '0', '0', '0'
 
 if df_appointments is not None and not df_appointments.empty:
-    if {'client_name', 'pet_name'}.issubset(df_appointments.columns):
+    if {'owner_id', 'animal_id'}.issubset(df_appointments.columns):
         total_citas = str(df_appointments.shape[0])
-        total_clientes = str(df_appointments['client_name'].nunique())
+        total_clientes = str(df_appointments['owner_id'].nunique())
     else:
         st.error("El DataFrame de citas no contiene las columnas esperadas. Verifique la respuesta de la API.")
 else:
@@ -53,16 +53,33 @@ col3.subheader('Total animales')
 info_box(total_animales)
 
 # Tabs de gráficos
-tab1, tab2 = st.tabs(["Distribución de citas", "Análisis de citas"])
+tab1, tab2, tab3 = st.tabs(["Distribución de citas", "Análisis de citas", "Análisis de animales"])
 
 # Gráficos
 if df_appointments is not None and not df_appointments.empty:
-    fig1 = px.scatter(df_appointments, x='pet_name', y='date', color='treatment', title="Citas por tratamiento")
+    fig1 = px.scatter(df_appointments, x='id', y='date', color='treatment', title="Citas por tratamiento")
     fig2 = px.histogram(df_appointments, x='date', title="Distribución de citas por fecha")
     
     with tab1:
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
     with tab2:
         st.plotly_chart(fig2, use_container_width=True)
+    
+    # Gráfico de barras para citas por tratamiento
+    st.subheader("Citas por Tratamiento")
+    treatment_counts = df_appointments['treatment'].value_counts()
+    fig_treatment = px.bar(treatment_counts, x=treatment_counts.index, y=treatment_counts.values, labels={'x': 'Tratamiento', 'y': 'Número de Citas'}, title="Número de Citas por Tratamiento")
+    st.plotly_chart(fig_treatment, use_container_width=True)
+
 else:
     st.info("No hay datos suficientes para mostrar los gráficos.")
+
+# Gráfico de pastel para distribución de especies de animales
+if df_animals is not None and not df_animals.empty:
+    with tab3:
+        st.subheader("Distribución de Especies de Animales")
+        species_counts = df_animals['species'].value_counts()
+        fig_species = px.pie(species_counts, names=species_counts.index, values=species_counts.values, title="Distribución de Especies de Animales")
+        st.plotly_chart(fig_species, use_container_width=True)
+else:
+    st.info("No hay datos suficientes para mostrar los gráficos de animales.")
