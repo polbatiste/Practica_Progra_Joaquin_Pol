@@ -53,7 +53,7 @@ col3.subheader('Total animales')
 info_box(total_animales)
 
 # Tabs de gráficos
-tab1, tab2, tab3 = st.tabs(["Distribución de citas", "Análisis de citas", "Análisis de animales"])
+tab1, tab2, tab3, tab4 = st.tabs(["Distribución de citas", "Análisis de citas", "Análisis de animales", "Animales por Tratamiento"])
 
 # Gráficos
 if df_appointments is not None and not df_appointments.empty:
@@ -70,6 +70,13 @@ if df_appointments is not None and not df_appointments.empty:
     treatment_counts = df_appointments['treatment'].value_counts()
     fig_treatment = px.bar(treatment_counts, x=treatment_counts.index, y=treatment_counts.values, labels={'x': 'Tratamiento', 'y': 'Número de Citas'}, title="Número de Citas por Tratamiento")
     st.plotly_chart(fig_treatment, use_container_width=True)
+
+    # Nuevo gráfico de barras para número de animales por tratamiento
+    with tab4:
+        st.subheader("Número de Animales por Tratamiento")
+        animal_treatment_counts = df_appointments.groupby('treatment')['animal_id'].nunique()
+        fig_animal_treatment = px.bar(animal_treatment_counts, x=animal_treatment_counts.index, y=animal_treatment_counts.values, labels={'x': 'Tratamiento', 'y': 'Número de Animales'}, title="Número de Animales por Tratamiento")
+        st.plotly_chart(fig_animal_treatment, use_container_width=True)
 
 else:
     st.info("No hay datos suficientes para mostrar los gráficos.")
