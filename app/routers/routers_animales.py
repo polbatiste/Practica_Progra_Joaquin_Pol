@@ -1,10 +1,10 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from database.engine import get_db
-from utils.validators import AnimalValidator, SpecialAnimalValidator
-from utils.repositories import AnimalRepository, ExoticAnimalRepository
+from utils.validators import IValidator, AnimalValidator, SpecialAnimalValidator
+from utils.repositories import IRepository, AnimalRepository, ExoticAnimalRepository
 from database.data.models import Animal as AnimalModel
 
 router = APIRouter()
@@ -21,20 +21,39 @@ class Animal(BaseModel):
     class Config:
         orm_mode = True
 
+# Dependencias inyectables
+def get_validator() -> IValidator:
+    return AnimalValidator()
+
+def get_repository() -> IRepository:
+    return AnimalRepository()
+
+def get_special_validator() -> IValidator:
+    return SpecialAnimalValidator()
+
+def get_special_repository() -> IRepository:
+    return ExoticAnimalRepository()
+
 # Creación de un animal estándar
 @router.post("/animals", response_model=Animal, status_code=status.HTTP_201_CREATED)
-def create_animal(animal: Animal, db: Session = Depends(get_db)):
-    validator = AnimalValidator()
-    repo = AnimalRepository()
+def create_animal(
+    animal: Animal,
+    db: Session = Depends(get_db),
+    validator: IValidator = Depends(get_validator),
+    repo: IRepository = Depends(get_repository),
+):
     validator.validate_owner_exists(db, animal.owner_id)
     validator.validate_unique_animal(db, animal.name, animal.owner_id)
     return repo.add(db, animal.dict(exclude={'id'}))
 
 # Creación de un animal exótico
 @router.post("/animals/exotic", response_model=Animal, status_code=status.HTTP_201_CREATED)
-def create_exotic_animal(animal: Animal, db: Session = Depends(get_db)):
-    validator = SpecialAnimalValidator()
-    repo = ExoticAnimalRepository()
+def create_exotic_animal(
+    animal: Animal,
+    db: Session = Depends(get_db),
+    validator: IValidator = Depends(get_special_validator),
+    repo: IRepository = Depends(get_special_repository),
+):
     validator.validate_owner_exists(db, animal.owner_id)
     validator.validate_unique_animal(db, animal.name, animal.owner_id)
     validator.validate_exotic_species(animal.dict())
