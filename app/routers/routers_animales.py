@@ -21,21 +21,27 @@ class Animal(BaseModel):
     class Config:
         orm_mode = True
 
-@router.post("/animals", response_model=Animal, status_code=status.HTTP_201_CREATED)
-def create_animal(animal: Animal, db: Session = Depends(get_db)):
-    """Crea un nuevo animal estándar."""
-    validator = AnimalValidator()
-    repo = AnimalRepository()
+# Sustitución de validadores y repositorios
+def create_animal_with_validator_and_repo(
+    animal: Animal, db: Session, validator, repo
+):
+    """Crea un animal utilizando un validador y repositorio específicos."""
     validator.validate(db, animal.dict())
     return repo.add(db, animal.dict(exclude={'id'}))
 
+@router.post("/animals", response_model=Animal, status_code=status.HTTP_201_CREATED)
+def create_animal(animal: Animal, db: Session = Depends(get_db)):
+    """Crea un nuevo animal estándar."""
+    return create_animal_with_validator_and_repo(
+        animal, db, AnimalValidator(), AnimalRepository()
+    )
+
 @router.post("/animals/exotic", response_model=Animal, status_code=status.HTTP_201_CREATED)
 def create_exotic_animal(animal: Animal, db: Session = Depends(get_db)):
-    """Crea un nuevo animal exótico con validaciones y repositorio extendidos."""
-    validator = SpecialAnimalValidator()
-    repo = ExoticAnimalRepository()
-    validator.validate(db, animal.dict())
-    return repo.add(db, animal.dict(exclude={'id'}))
+    """Crea un nuevo animal exótico."""
+    return create_animal_with_validator_and_repo(
+        animal, db, SpecialAnimalValidator(), ExoticAnimalRepository()
+    )
 
 @router.get("/animals", response_model=List[Animal])
 def get_animals(db: Session = Depends(get_db)):
