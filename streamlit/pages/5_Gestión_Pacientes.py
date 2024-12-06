@@ -140,7 +140,7 @@ with tab1:
     col1, col2 = st.columns([3, 1])
     with col2:
         if st.button("Registrar Nuevo Propietario"):
-            st.write('<meta http-equiv="refresh" content="0;url=/pages/4_Dueños.py">', unsafe_allow_html=True)
+            st.write('<meta http-equiv="refresh" content="0;url=/pages/4_Gestión_Propietarios.py">', unsafe_allow_html=True)
 
     with st.form("animal_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
