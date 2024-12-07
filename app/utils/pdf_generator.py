@@ -77,7 +77,7 @@ def generate_pdf(invoice, owner):
     # Información de contacto de la clínica
     pdf.set_font('Arial', '', 9)
     pdf.set_text_color(100, 100, 100)
-    for info in ['C/ Principal, 123', '28001 Madrid', 'Tel: +34 911 234 567', 'Email: info@mentema.com']:
+    for info in ['C/ Principal, 123', '28001 Madrid', 'Tel: +34 911 234 567', 'Email: veterinaria.mentema@gmail.com']:
         pdf.cell(40)
         pdf.cell(150, 5, info, 0, 1, 'R')
 
