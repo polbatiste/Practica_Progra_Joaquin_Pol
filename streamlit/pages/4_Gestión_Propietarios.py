@@ -108,7 +108,8 @@ with st.form("owner_form", clear_on_submit=True):
 
 if st.session_state.get('from_animals'):
     if st.button("Volver a Registro de Pacientes"):
-        st.switch_page("pages/5_Gestión_Pacientes.py.py")
+
+        st.switch_page("pages/5_Gestión_Pacientes.py")
 
 # Sección de Eliminación
 st.subheader("Solicitud de Baja de Propietario")
