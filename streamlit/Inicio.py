@@ -170,8 +170,8 @@ st.markdown("""
         <ul>
             <li><strong>Horario:</strong> Lunes a Sábado de 9:00 a 20:00</li>
             <li><strong>Urgencias:</strong> Servicio 24/7</li>
-            <li><strong>Email:</strong> info@clinicaveterinaria.com</li>
-            <li><strong>Teléfono:</strong> +34 900 123 456</li>
+            <li><strong>Email:</strong> veterinaria.mentema@gmail.com</li>
+            <li><strong>Teléfono:</strong> +34 911 234 567</li>
         </ul>
     </div>
 """, unsafe_allow_html=True)
