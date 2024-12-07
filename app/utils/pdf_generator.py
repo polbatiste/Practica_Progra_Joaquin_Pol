@@ -8,6 +8,11 @@ os.makedirs("generated_invoices", exist_ok=True)
 
 class PDF(FPDF):
     def footer(self):
+        # Agregar línea separadora
+        self.set_y(-20)
+        self.line(10, self.get_y(), 200, self.get_y())
+        
+        # Agregar footer con número de página
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
         self.set_text_color(128)
@@ -25,44 +30,81 @@ def generate_pdf(invoice, owner):
     pdf.set_display_mode('real')
     pdf.alias_nb_pages()
     pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # Catálogo completo de tratamientos con precios y descripciones
+    tratamientos_info = {
+        # Tratamientos básicos
+        "Análisis de sangre": {"precio": 50.0, "descripcion": "Análisis de sangre completo"},
+        "Análisis hormonales": {"precio": 70.0, "descripcion": "Detección de niveles hormonales"},
+        "Vacunación": {"precio": 30.0, "descripcion": "Vacunas generales"},
+        "Desparasitación": {"precio": 25.0, "descripcion": "Eliminación de parásitos internos y externos"},
+        
+        # Revisión general
+        "Revisión general": {"precio": 60.0, "descripcion": "Revisión completa del animal"},
+        
+        # Revisión específica
+        "Revisión cardiológica": {"precio": 120.0, "descripcion": "Examen especializado del corazón"},
+        "Revisión cutánea": {"precio": 80.0, "descripcion": "Evaluación de la piel y pelaje"},
+        "Revisión broncológica": {"precio": 90.0, "descripcion": "Revisión de vías respiratorias"},
+        
+        # Ecografías
+        "Ecografía abdominal": {"precio": 150.0, "descripcion": "Ecografía de la cavidad abdominal"},
+        "Ecografía cardíaca": {"precio": 180.0, "descripcion": "Ecografía para evaluar el corazón"},
+        
+        # Tratamientos dentales
+        "Limpieza bucal": {"precio": 100.0, "descripcion": "Limpieza profunda de dientes"},
+        "Extracción de piezas dentales": {"precio": 200.0, "descripcion": "Extracción quirúrgica de dientes dañados"},
+        
+        # Cirugías
+        "Castración": {"precio": 150.0, "descripcion": "Castración quirúrgica"},
+        "Cirugía abdominal": {"precio": 300.0, "descripcion": "Procedimientos quirúrgicos abdominales"},
+        "Cirugía cardíaca": {"precio": 500.0, "descripcion": "Cirugía en el corazón"},
+        "Cirugía articular y ósea": {"precio": 400.0, "descripcion": "Reparación de articulaciones y huesos"},
+        "Cirugía de hernias": {"precio": 250.0, "descripcion": "Reparación de hernias"}
+    }
 
     # Agregar logo
     logo_path = "streamlit/logo.jpg"
     if os.path.exists(logo_path):
         pdf.image(logo_path, 10, 8, 30)
-    
-    # Encabezado con datos de la clínica
-    pdf.set_font('Arial', 'B', 16)
-    pdf.cell(40)  # Espacio para el logo
-    pdf.cell(150, 10, 'Clínica Veterinaria Mentema', 0, 1, 'R')
-    pdf.set_font('Arial', '', 9)
-    pdf.cell(40)
-    pdf.cell(150, 5, 'C/ Principal, 123', 0, 1, 'R')
-    pdf.cell(40)
-    pdf.cell(150, 5, '28001 Madrid', 0, 1, 'R')
-    pdf.cell(40)
-    pdf.cell(150, 5, 'Tel: +34 911 234 567', 0, 1, 'R')
-    pdf.cell(40)
-    pdf.cell(150, 5, 'Email: info@mentema.com', 0, 1, 'R')
 
-    # Línea separadora
+    # Estilo para el encabezado de la clínica
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(40)
+    pdf.cell(150, 10, 'Clínica Veterinaria Mentema', 0, 1, 'R')
+    
+    # Información de contacto de la clínica
+    pdf.set_font('Arial', '', 9)
+    pdf.set_text_color(100, 100, 100)
+    for info in ['C/ Principal, 123', '28001 Madrid', 'Tel: +34 911 234 567', 'Email: info@mentema.com']:
+        pdf.cell(40)
+        pdf.cell(150, 5, info, 0, 1, 'R')
+
+    # Línea separadora con degradado
     pdf.ln(5)
+    pdf.set_draw_color(44, 62, 80)
+    pdf.set_line_width(0.5)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(10)
 
-    # Número de factura y fecha
+    # Número de factura y fecha con estilo mejorado
+    pdf.set_text_color(44, 62, 80)
     pdf.set_font('Arial', 'B', 14)
     pdf.cell(0, 10, f'FACTURA Nº: {invoice.id}', 0, 1)
     pdf.set_font('Arial', '', 10)
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
-    pdf.cell(0, 5, f'Fecha: {fecha_actual}', 0, 1)
+    pdf.cell(0, 5, f'Fecha de emisión: {fecha_actual}', 0, 1)
     pdf.ln(10)
 
-    # Información del cliente
-    pdf.set_fill_color(240, 240, 240)
+    # Información del cliente con estilo mejorado
+    pdf.set_fill_color(44, 62, 80)
+    pdf.set_text_color(255, 255, 255)
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 8, 'DATOS DEL CLIENTE', 1, 1, 'L', 1)
+    
+    # Restaurar colores para el contenido
+    pdf.set_text_color(0, 0, 0)
     pdf.set_font('Arial', '', 10)
     
     info_cliente = [
@@ -75,70 +117,79 @@ def generate_pdf(invoice, owner):
     
     for info in info_cliente:
         pdf.cell(0, 6, info, 'LR', 1)
-    pdf.cell(0, 0, '', 'LRB', 1)  # Línea inferior del marco
-    pdf.ln(10)
-    
-    # Información del animal
-    pdf.set_fill_color(240, 240, 240)
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 8, 'DATOS DEL ANIMAL', 1, 1, 'L', 1)
-    pdf.set_font('Arial', '', 10)
-    
-    # Necesitamos obtener el animal del appointment, asumiendo que está en invoice.appointment.animal
-    if hasattr(invoice, 'appointment') and hasattr(invoice.appointment, 'animal'):
-        animal = invoice.appointment.animal
-        info_animal = [
-            f'Nombre: {animal.name}',
-            f'Especie: {animal.species}',
-            f'Raza: {animal.breed}',
-            f'Edad: {animal.age} años'
-        ]
-        
-        for info in info_animal:
-            pdf.cell(0, 6, info, 'LR', 1)
-        pdf.cell(0, 0, '', 'LRB', 1)  # Línea inferior del marco
-        
+    pdf.cell(0, 0, '', 'LRB', 1)
     pdf.ln(10)
 
-    # Detalles de los servicios
+    # Detalles de los servicios con estilo mejorado
+    pdf.set_text_color(255, 255, 255)
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 8, 'DETALLES DE LOS SERVICIOS', 1, 1, 'L', 1)
     
     # Cabecera de la tabla
+    pdf.set_fill_color(240, 240, 240)
+    pdf.set_text_color(0, 0, 0)
     pdf.set_font('Arial', 'B', 10)
-    pdf.cell(130, 8, 'Descripción', 1, 0)
-    pdf.cell(30, 8, 'Precio', 1, 1, 'R')
+    pdf.cell(90, 8, 'Descripción', 1, 0, 'L', 1)
+    pdf.cell(70, 8, 'Detalle', 1, 0, 'L', 1)
+    pdf.cell(30, 8, 'Precio', 1, 1, 'R', 1)
     
     # Contenido de la tabla
-    pdf.set_font('Arial', '', 10)
-    treatments = invoice.treatments.split(',')
-    subtotal = invoice.total_price / (1 + 0.21)  # Asumiendo IVA del 21%
-    
-    for treatment in treatments:
-        pdf.cell(130, 8, treatment.strip(), 1)
-        pdf.cell(30, 8, f'{subtotal/len(treatments):.2f} EUR', 1, 1, 'R')
+    pdf.set_font('Arial', '', 9)
+    treatments = invoice.treatments.split(',') if invoice.treatments else []
+    subtotal = 0
 
-    # Totales
+    for treatment in treatments:
+        treatment = treatment.strip()
+        if treatment in tratamientos_info:
+            info = tratamientos_info[treatment]
+            pdf.cell(90, 8, treatment, 1)
+            pdf.cell(70, 8, info["descripcion"], 1)
+            pdf.cell(30, 8, f'{info["precio"]:.2f} EUR', 1, 1, 'R')
+            subtotal += info["precio"]
+
+    # Resumen financiero con estilo mejorado
     pdf.ln(5)
+    pdf.set_font('Arial', '', 10)
+    
+    # Calcular totales
+    iva = round(subtotal * 0.21, 2)
+    total = round(subtotal + iva, 2)
+    
+    # Cuadro de totales alineado a la derecha
     pdf.cell(130)
-    pdf.cell(30, 8, f'Subtotal: {subtotal:.2f} EUR', 0, 1, 'R')
+    pdf.cell(30, 8, 'Subtotal:', 0)
+    pdf.cell(30, 8, f'{subtotal:.2f} EUR', 0, 1, 'R')
+    
     pdf.cell(130)
-    pdf.cell(30, 8, f'IVA (21%): {(invoice.total_price - subtotal):.2f} EUR', 0, 1, 'R')
+    pdf.cell(30, 8, 'IVA (21%):', 0)
+    pdf.cell(30, 8, f'{iva:.2f} EUR', 0, 1, 'R')
+    
+    # Línea separadora para el total
+    pdf.cell(130)
+    pdf.set_draw_color(44, 62, 80)
+    pdf.line(160, pdf.get_y(), 200, pdf.get_y())
+    
+    # Total en negrita
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(130)
-    pdf.cell(30, 10, f'Total: {invoice.total_price:.2f} EUR', 0, 1, 'R')
+    pdf.cell(30, 10, 'Total:', 0)
+    pdf.cell(30, 10, f'{total:.2f} EUR', 0, 1, 'R')
 
-    # Método de pago y estado
+    # Información de pago y estado
     pdf.ln(10)
     pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 6, f'Método de pago: {invoice.payment_method}', 0, 1)
-    pdf.cell(0, 6, f'Estado: {"Pagada" if invoice.paid else "Pendiente"}', 0, 1)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.cell(0, 6, f'Método de pago: {invoice.payment_method}', 'T', 1)
+    pdf.cell(0, 6, f'Estado: {"Pagada" if invoice.paid else "Pendiente"}', 'B', 1)
 
-    # Nota legal
+    # Nota legal con estilo mejorado
     pdf.ln(15)
     pdf.set_font('Arial', 'I', 8)
+    pdf.set_text_color(128)
     pdf.multi_cell(0, 4, 'Esta factura sirve como comprobante de pago y garantía de los servicios prestados. ' +
-                        'Conserve este documento para futuras referencias. Gracias por confiar en Clínica Veterinaria Mentema.')
+                        'Los precios incluyen IVA según la legislación vigente. ' +
+                        'Conserve este documento para futuras referencias. ' +
+                        'Gracias por confiar en Clínica Veterinaria Mentema.')
 
     # Guardar el PDF
     downloads_dir = "downloads"

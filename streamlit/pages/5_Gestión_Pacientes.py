@@ -107,21 +107,22 @@ def get_animals():
 
 def mark_animal_as_deceased(animal_id):
     try:
-        response = requests.put(f"{API_URL_ANIMALS}/{animal_id}/mark-deceased")
+        response = requests.patch(f"{API_URL_ANIMALS}/{animal_id}/deceased")
+        
         if response.status_code == 200:
-            st.success(f"El paciente ha sido marcado como fallecido")
-            st.experimental_rerun()
+            st.success("El paciente ha sido marcado como fallecido")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
         else:
             st.error(f"Error en la actualización del estado: {response.text}")
-    except:
-        st.error("Error de conexión con el servidor")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error de conexión con el servidor: {str(e)}")
 
 def delete_animal(animal_id):
     try:
         response = requests.delete(f"{API_URL_ANIMALS}/{animal_id}")
         if response.status_code == 204:
-            st.success(f"Registro eliminado exitosamente")
-            st.experimental_rerun()
+            st.success("Registro eliminado exitosamente")
+            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
         else:
             st.error(f"Error al eliminar el registro: {response.text}")
     except:

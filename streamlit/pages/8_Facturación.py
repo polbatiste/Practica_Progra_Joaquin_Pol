@@ -112,11 +112,11 @@ def marcar_pagada(invoice_id):
         respuesta = requests.put(f"{url_invoices}/{invoice_id}/pay")
         if respuesta.status_code == 200:
             st.success("Factura marcada como pagada exitosamente")
-            st.write('<meta http-equiv="refresh" content="0">', unsafe_allow_html=True)
+            st.rerun()
         else:
             st.error(f"Error en la actualización: {respuesta.text}")
-    except:
-        st.error("Error de conexión con el servidor")
+    except Exception as e:
+        st.error(f"Error de conexión con el servidor: {str(e)}")
 
 def descargar_factura(invoice_id):
     try:
@@ -133,11 +133,14 @@ def enviar_factura_correo(invoice_id, recipient_email):
         data = {"recipient_email": recipient_email}
         respuesta = requests.post(f"{url_invoices}/{invoice_id}/send-email", json=data)
         if respuesta.status_code == 200:
-            st.success("Factura enviada exitosamente")
+            st.success("Factura enviada exitosamente por correo")
+            return True
         else:
             st.error(f"Error en el envío: {respuesta.text}")
-    except:
-        st.error("Error de conexión con el servidor")
+            return False
+    except Exception as e:
+        st.error(f"Error de conexión con el servidor: {str(e)}")
+        return False
 
 st.title("Sistema de Facturación")
 
@@ -194,19 +197,19 @@ with tab1:
 with tab2:
     st.header("Gestión de Facturas")
     
-    # Primero el formulario para recoger los datos
-    with st.form("factura_form", clear_on_submit=True):
+    # Formulario para recoger los datos
+    col1, col2 = st.columns(2)
+    with col1:
         id_factura = st.text_input("ID de la Factura")
+    with col2:
         correo = st.text_input("Correo electrónico para envío")
-        enviado = st.form_submit_button("Procesar")
     
-    # Luego, fuera del formulario, los botones de acción
-    if enviado and id_factura:
+    if id_factura:  # Solo mostrar botones si hay ID de factura
         st.markdown("### Acciones Disponibles")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("Registrar Pago", key="btn_pago"):
+            if st.button("Marcar como Pagada", type="primary", key="btn_pago"):
                 marcar_pagada(id_factura)
         
         with col2:
@@ -216,7 +219,8 @@ with tab2:
                     label="Descargar PDF",
                     data=pdf_data,
                     file_name=f"factura_{id_factura}.pdf",
-                    mime="application/pdf"
+                    mime="application/pdf",
+                    key="download_pdf"
                 )
         
         with col3:
@@ -224,6 +228,6 @@ with tab2:
                 if st.button("Enviar por Email", key="btn_email"):
                     enviar_factura_correo(id_factura, correo)
             else:
-                st.warning("Ingrese un correo para habilitar el envío")
-    elif enviado:
-        st.error("El ID de factura es obligatorio")
+                st.warning("Ingrese un correo para enviar la factura")
+    else:
+        st.warning("Por favor, ingrese un ID de factura")

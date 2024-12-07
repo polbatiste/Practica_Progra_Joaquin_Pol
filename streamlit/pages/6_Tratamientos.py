@@ -200,10 +200,9 @@ with tab3:
         )
         razon = st.text_area("Motivo de la eliminación", height=100)
         
-        if st.button("Eliminar Tratamiento", key="btn_eliminar"):
+        if st.button("Eliminar Tratamiento", type="primary"):
             if razon:
-                if st.button("Confirmar Eliminación", key="btn_confirmar"):
-                    delete_tratamiento(nombre_eliminar)
+                delete_tratamiento(nombre_eliminar)
             else:
                 st.error("Por favor, indique el motivo de la eliminación")
     else:
