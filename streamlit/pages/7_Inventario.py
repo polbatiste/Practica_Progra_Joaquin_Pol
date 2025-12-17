@@ -73,8 +73,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # URLs de la API
-API_URL = "http://app:8000/api/v1/productos"
-API_FACTURAS_URL = "http://app:8000/api/v1/facturas"
+API_URL = "http://localhost:8000/api/v1/productos"
+API_FACTURAS_URL = "http://localhost:8000/api/v1/facturas"
 
 st.title("Sistema de Gestión de Inventario")
 

@@ -69,10 +69,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # URLs de la API
-url_api = "http://app:8000/api/v1/appointments"
-url_tratamientos = "http://app:8000/api/v1/tratamientos"
-url_owners = "http://app:8000/api/v1/owners"
-url_animals = "http://app:8000/api/v1/animals"
+url_api = "http://localhost:8000/api/v1/appointments"
+url_tratamientos = "http://localhost:8000/api/v1/tratamientos"
+url_owners = "http://localhost:8000/api/v1/owners"
+url_animals = "http://localhost:8000/api/v1/animals"
 
 # Funciones auxiliares
 def obtener_dueños():

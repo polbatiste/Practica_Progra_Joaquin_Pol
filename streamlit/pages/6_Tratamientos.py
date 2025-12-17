@@ -66,7 +66,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuración del endpoint de la API
-API_URL = "http://app:8000/api/v1/tratamientos"
+API_URL = "http://localhost:8000/api/v1/tratamientos"
 
 st.title("Sistema de Gestión de Tratamientos")
 
