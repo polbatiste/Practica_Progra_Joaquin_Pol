@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Boolean, Date, Time
 from sqlalchemy.orm import relationship
-from database.engine import Base
+from app.database.engine import Base
 
 class Owner(Base):
     __tablename__ = 'owners'
