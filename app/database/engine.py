@@ -4,6 +4,8 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Configuración de la base de datos
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres@localhost:5432/clinica_veterinaria"
+#la bbdd es nueva con toda la estructura e informacion necesaria para registrar tanto
+#animales como dueños
 
 engine = create_engine(
     os.getenv("DATABASE_URL", SQLALCHEMY_DATABASE_URL),  # Usa la variable de entorno si está disponible
@@ -26,7 +28,7 @@ def create_tables():
     """Crea todas las tablas en la base de datos a partir de los modelos."""
     from app.database.data.models import Base  # Importación local para evitar circularidad
     Base.metadata.create_all(bind=engine)
-    print("Tablas creadas con éxito.")
+    print("Estructura de tabla creada")
 
 def seed_initial_data():
     """Inicializa datos con dueños, mascotas y tratamientos predeterminados."""
@@ -69,7 +71,7 @@ def seed_initial_data():
     finally:
         db.close()
 
+#Correr para inicializar en local la bbdd
 if __name__ == "__main__":
-    # Crea las tablas y llena los datos iniciales si ejecutas este archivo directamente
     create_tables()
     seed_initial_data()
