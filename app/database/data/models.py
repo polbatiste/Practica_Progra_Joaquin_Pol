@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Float, Boolean, Date, Time
 from sqlalchemy.orm import relationship
-from database.engine import Base
+from app.database.engine import Base
+#actualizacion de las rutas a la nueva estructura
 
 class Owner(Base):
     __tablename__ = 'owners'
