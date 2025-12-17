@@ -62,8 +62,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # URLs de la API
-API_URL_ANIMALS = "http://app:8000/api/v1/animals"
-API_URL_OWNERS = "http://app:8000/api/v1/owners"
+API_URL_ANIMALS = "http://localhost:8000/api/v1/animals"
+API_URL_OWNERS = "http://localhost:8000/api/v1/owners"
 
 st.title("Sistema de Gestión de Pacientes")
 

@@ -74,8 +74,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # URLs de la API
-url_invoices = "http://app:8000/api/v1/invoices"
-url_tratamientos = "http://app:8000/api/v1/tratamientos"
+url_invoices = "http://localhost:8000/api/v1/invoices"
+url_tratamientos = "http://localhost:8000/api/v1/tratamientos"
 
 # Funciones de utilidad
 def obtener_precios_tratamientos():

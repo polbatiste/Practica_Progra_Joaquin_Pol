@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import time
 
-API_URL = "http://app:8000/api/v1/owners"
+API_URL = "http://localhost:8000/api/v1/owners"
 
 st.set_page_config(
     page_title="Clínica Veterinaria - Gestión de Propietarios",
