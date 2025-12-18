@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from database.data.models import Owner, Animal as AnimalModel
+from app.database.data.models import Owner, Animal as AnimalModel
 
 # Interfaces específicas para validaciones
 class IValidateOwner(ABC):

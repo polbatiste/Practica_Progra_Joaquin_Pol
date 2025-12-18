@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status, Query, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from database.data.models import Owner as OwnerModel, Animal as AnimalModel
-from database.engine import get_db
+from app.database.data.models import Owner as OwnerModel, Animal as AnimalModel
+from app.database.engine import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
-from utils.email_sender import send_email_with_attachment
+from app.utils.email_sender import send_email_with_attachment
 
 router = APIRouter()
 

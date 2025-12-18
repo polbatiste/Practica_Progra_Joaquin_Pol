@@ -2,10 +2,10 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
-from database.engine import get_db
-from utils.validators import IValidator, AnimalValidator, SpecialAnimalValidator
-from utils.repositories import IRepository, AnimalRepository, ExoticAnimalRepository
-from database.data.models import Animal as AnimalModel
+from app.database.engine import get_db
+from app.utils.validators import IValidator, AnimalValidator, SpecialAnimalValidator
+from app.utils.repositories import IRepository, AnimalRepository, ExoticAnimalRepository
+from app.database.data.models import Animal as AnimalModel
 
 router = APIRouter()
 

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from database.data.models import Invoice as InvoiceModel, Owner as OwnerModel
-from database.engine import get_db
+from app.database.data.models import Invoice as InvoiceModel, Owner as OwnerModel
+from app.database.engine import get_db
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
