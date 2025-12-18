@@ -1,11 +1,15 @@
+import collections
+if not hasattr(collections, 'MutableMapping'):
+    import collections.abc
+    collections.MutableMapping = collections.abc.MutableMapping
 from fastapi import FastAPI
-from routers.routers_owners import router as owners_router
-from routers.routers_citas import router as appointments_router
-from routers.routers_animales import router as animals_router
-from routers.routers_tratamientos import router as tratamientos_router
-from routers.routers_productos import router as productos_router
-from routers.routers_facturas import router as invoices_router  # Nuevo router
-from database.engine import create_tables, seed_initial_data
+from app.routers.routers_owners import router as owners_router
+from app.routers.routers_citas import router as appointments_router
+from app.routers.routers_animales import router as animals_router
+from app.routers.routers_tratamientos import router as tratamientos_router
+from app.routers.routers_productos import router as productos_router
+from app.routers.routers_facturas import router as invoices_router  # Nuevo router
+from app.database.engine import create_tables, seed_initial_data
 
 # Inicializar base de datos y datos iniciales
 create_tables()

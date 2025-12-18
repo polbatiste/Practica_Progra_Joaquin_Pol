@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
-from database.data.models import Animal as AnimalModel
+from app.database.data.models import Animal as AnimalModel
 
 # Interfaces específicas para operaciones de repositorios
 class IAddRepository(ABC):

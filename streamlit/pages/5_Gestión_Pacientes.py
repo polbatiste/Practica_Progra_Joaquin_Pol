@@ -175,28 +175,49 @@ with tab1:
 with tab2:
     st.header("Registro de Pacientes")
     animals = get_animals()
-    if animals:
-        enriched_animals = []
-        for animal in animals:
-            owner = next((o for o in owners if o['id'] == animal['owner_id']), None)
-            status_color = "#dc3545" if animal['status'] == "DECEASED" else "#28a745"
-            enriched_animals.append({
-                'ID': animal['id'],
-                'Nombre': animal['name'],
-                'Especie': animal['species'],
-                'Raza': animal['breed'],
-                'Edad': animal['age'],
-                'Estado': f"<span style='color: {status_color}'>{animal['status']}</span>",
-                'Propietario': owner['nombre'] if owner else 'No registrado'
-            })
-        
-        df_animals = pd.DataFrame(enriched_animals)
-        st.write(
-            df_animals.to_html(escape=False, index=False),
-            unsafe_allow_html=True
+    owners = get_owners()
+
+    if animals and owners:
+        df_a = pd.DataFrame(animals)
+        df_o = pd.DataFrame(owners)
+
+        # 1. Unión de tablas
+        # Unimos df_a con las columnas 'id' y 'nombre' de df_o
+        df_final = df_a.merge(
+            df_o[['id', 'nombre']],
+            left_on='owner_id',
+            right_on='id',
+            how='left',
+            suffixes=('', '_owner')  # Si hay choque, el del dueño tendrá sufijo
+        )
+
+        # 2. LIMPIEZA CRUCIAL: Eliminamos la columna 'id' que vino del dueño
+        # para que no esté duplicada con el 'id' del animal
+        if 'id_owner' in df_final.columns:
+            df_final = df_final.drop(columns=['id_owner'])
+        elif 'id_y' in df_final.columns:
+            df_final = df_final.drop(columns=['id_y'])
+
+        # 3. Renombramos para la vista del usuario
+        df_final = df_final.rename(columns={
+            'nombre': 'Propietario',
+            'name': 'Nombre',
+            'status': 'Estado'
+        })
+
+        # 4. Seleccionamos solo las columnas que queremos ver (y que existan)
+        columnas_finales = ['id', 'Nombre', 'species', 'breed', 'age', 'Estado', 'Propietario']
+
+        # Filtro de seguridad por si alguna columna cambió de nombre
+        df_para_mostrar = df_final[[c for c in columnas_finales if c in df_final.columns]]
+
+        st.dataframe(
+            df_para_mostrar,
+            use_container_width=True,
+            hide_index=True
         )
     else:
-        st.info("No hay pacientes registrados en el sistema")
+        st.info("No hay pacientes o propietarios registrados en el sistema")
 
 with tab3:
     st.header("Actualización de Estados")
