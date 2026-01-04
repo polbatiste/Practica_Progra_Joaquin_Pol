@@ -85,7 +85,9 @@ placeholder.empty()
 # Logo y título
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    st.image('logo.jpg', use_column_width=True)
+    if os.path.exists('logo.jpg'):
+        # Usamos use_container_width para evitar la advertencia de deprecación
+        st.image('logo.jpg', use_container_width=True)
 
 st.title("Sistema Integral de Gestión Veterinaria")
 
