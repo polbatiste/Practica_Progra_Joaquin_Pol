@@ -39,6 +39,12 @@ if df_animals is not None and not df_animals.empty:
 else:
     st.error("No se pudieron cargar los datos de animales o el DataFrame está vacío.")
 
+if not df_appointments.empty:
+    # Convertir la columna 'date' a formato datetime
+    df_appointments['date'] = pd.to_datetime(df_appointments['date'])
+    # Ordenar por fecha para que el gráfico tenga sentido cronológico
+    df_appointments = df_appointments.sort_values('date')
+
 # Título y cabecera del dashboard
 st.title("Dashboard de la Clínica Veterinaria")
 st.header("Información general")
@@ -57,8 +63,29 @@ tab1, tab2, tab3, tab4 = st.tabs(["Distribución de citas", "Análisis de citas"
 # Lógica de gráficos dentro de sus pestañas correspondientes
 if df_appointments is not None and not df_appointments.empty:
      with tab1:
-         fig2 = px.histogram(df_appointments, x='date', title="Frecuencia de Citas por Fecha", color_discrete_sequence=['#4EBAE1'])
-         st.plotly_chart(fig2, use_container_width=True)
+        st.subheader("Frecuencia Diaria de Citas")
+
+        # Creamos el histograma asegurando que agrupe por día
+        fig2 = px.histogram(
+            df_appointments,
+            x='date',
+            title="Citas Programadas por Día",
+            color_discrete_sequence=['#4EBAE1'],
+            labels={'date': 'Fecha', 'count': 'Número de Citas'}
+        )
+
+        # Ajustamos el eje X para que muestre todos los días del mes
+        fig2.update_layout(
+            xaxis_title="Día del Mes",
+            yaxis_title="Cantidad de Citas",
+            bargap=0.2,  # Espacio entre barras
+            xaxis=dict(
+                type='date',
+                tickformat='%d %b',  # Formato: 01 Ene
+                dtick="D1"  # Fuerza a mostrar una marca por cada día
+            )
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
      with tab2:
          treatment_counts = df_appointments['treatment'].value_counts()
@@ -88,3 +115,10 @@ if df_animals is not None and not df_animals.empty:
          st.plotly_chart(fig_species, use_container_width=True)
 else:
     st.info("No hay datos suficientes para mostrar los gráficos de animales.")
+
+with st.sidebar:
+    st.divider()
+    if st.button("🔄Refrescar Datos", help="Limpia la caché y vuelve a consultar la base de datos"):
+        st.cache_data.clear()
+        st.success("Caché limpiada")
+        st.rerun()
