@@ -41,6 +41,23 @@ def get_invoice(invoice_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Factura no encontrada")
     return invoice
 
+@router.post("/invoices", response_model=Invoice, status_code=201)
+def create_invoice(invoice_data: Invoice, db: Session = Depends(get_db)):
+    # Crear la instancia del modelo SQLAlchemy
+    new_invoice = InvoiceModel(
+        appointment_id=invoice_data.appointment_id,
+        owner_id=invoice_data.owner_id,
+        treatments=invoice_data.treatments,
+        total_price=invoice_data.total_price,
+        payment_method=invoice_data.payment_method,
+        paid=invoice_data.paid
+    )
+
+    db.add(new_invoice)
+    db.commit()
+    db.refresh(new_invoice)
+    return new_invoice
+
 # Actualizar el estado de pago de una factura
 @router.put("/invoices/{invoice_id}/pay", response_model=Invoice)
 def pay_invoice(invoice_id: int, db: Session = Depends(get_db)):
@@ -57,7 +74,7 @@ def pay_invoice(invoice_id: int, db: Session = Depends(get_db)):
 @router.get("/invoices/{invoice_id}/download")
 async def download_invoice(invoice_id: int, db: Session = Depends(get_db)):
     try:
-        from utils.pdf_generator import generate_pdf
+        from app.utils.pdf_generator import generate_pdf
         
         invoice = db.query(InvoiceModel).filter(InvoiceModel.id == invoice_id).first()
         if not invoice:
@@ -91,8 +108,8 @@ def send_invoice_email(
     email_data: EmailSchema,
     db: Session = Depends(get_db)
 ):
-    from utils.email_sender import send_email_with_attachment
-    from utils.pdf_generator import generate_pdf
+    from app.utils.email_sender import send_email_with_attachment
+    from app.utils.pdf_generator import generate_pdf
 
     invoice = db.query(InvoiceModel).filter(InvoiceModel.id == invoice_id).first()
     if not invoice:
